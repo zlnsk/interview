@@ -1,0 +1,7 @@
+node_modules/
+uploads/
+.env
+.env.local
+ecosystem.config.js
+*.log
+.DS_Store
