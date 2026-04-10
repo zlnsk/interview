@@ -644,3 +644,331 @@ select {
   background: var(--border2);
   border-radius: 3px;
 }
+
+/* =============================================================================
+   Additions for v1.1: modes, personas, calendar, sessions, usage, prep, PiP
+   ========================================================================== */
+
+/* Mode chips */
+.mode-chips {
+  display: flex;
+  gap: 0.25rem;
+  margin-left: 0.4rem;
+  flex-wrap: wrap;
+}
+.chip {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  padding: 0.25rem 0.55rem;
+  border-radius: 14px;
+  font-size: 0.7rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.chip:hover { color: var(--text); border-color: var(--border2); }
+.chip.active {
+  background: var(--accent);
+  color: var(--bg);
+  border-color: var(--accent);
+}
+
+/* Top right usage pill */
+.header-actions { display: flex; gap: 0.5rem; align-items: center; }
+.usage-pill {
+  font-size: 0.7rem;
+  color: var(--text2);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  padding: 0.18rem 0.5rem;
+  border-radius: 12px;
+  cursor: pointer;
+}
+.usage-pill:hover { color: var(--text); }
+
+/* Drawer tabs */
+.drawer-header {
+  flex-direction: column;
+  align-items: stretch;
+  padding: 0.6rem 0.6rem 0;
+  gap: 0.5rem;
+}
+.drawer-tabs {
+  display: flex;
+  gap: 0.2rem;
+  flex-wrap: wrap;
+}
+.drawer-tabs .tab {
+  background: none;
+  border: none;
+  color: var(--text2);
+  padding: 0.4rem 0.7rem;
+  font-size: 0.75rem;
+  border-bottom: 2px solid transparent;
+  cursor: pointer;
+  font-weight: 500;
+}
+.drawer-tabs .tab.active {
+  color: var(--accent);
+  border-bottom-color: var(--accent);
+}
+.drawer-tabs .tab:hover { color: var(--text); }
+.drawer #btnCloseDrawer { align-self: flex-end; }
+
+.tab-pane { display: none; }
+.tab-pane.active { display: block; }
+
+/* Forms inside drawer */
+.stacked-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 0.8rem;
+}
+.stacked-form input,
+.stacked-form textarea,
+.stacked-form select {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  padding: 0.45rem 0.6rem;
+  border-radius: var(--radius);
+  font-size: 0.8rem;
+  font-family: inherit;
+  width: 100%;
+}
+.stacked-form textarea { resize: vertical; min-height: 80px; }
+.row { display: flex; gap: 0.4rem; align-items: center; flex-wrap: wrap; }
+
+.hint-text {
+  color: var(--text2);
+  font-size: 0.75rem;
+  margin: 0.4rem 0;
+  line-height: 1.45;
+}
+.hint-row { margin: 0.5rem 0; }
+
+.checkbox-row {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  color: var(--text2);
+  cursor: pointer;
+}
+.checkbox-row input[type=checkbox] { accent-color: var(--accent); }
+
+/* Doc list with toggles */
+.doc-toggle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  flex: 1;
+}
+.doc-toggle input[type=checkbox] { accent-color: var(--accent); }
+
+/* Calendar items */
+.cal-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--border);
+  align-items: flex-start;
+}
+.cal-info { flex: 1; min-width: 0; }
+.cal-item details {
+  margin-top: 0.3rem;
+  font-size: 0.72rem;
+}
+.cal-item details summary {
+  cursor: pointer;
+  color: var(--text2);
+}
+.cal-item details pre {
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  background: var(--surface2);
+  padding: 0.4rem;
+  border-radius: 4px;
+  margin-top: 0.3rem;
+  font-size: 0.7rem;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+/* Sessions list */
+.session-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.6rem 0;
+  border-bottom: 1px solid var(--border);
+  gap: 0.5rem;
+}
+
+/* Usage dashboard */
+.usage-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 0.4rem;
+  margin-bottom: 0.6rem;
+}
+.usage-card {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.7rem;
+}
+.usage-card-label {
+  font-size: 0.65rem;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.usage-card-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--text);
+  margin-top: 0.15rem;
+}
+.usage-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.72rem;
+}
+.usage-table th,
+.usage-table td {
+  padding: 0.3rem 0.4rem;
+  border-bottom: 1px solid var(--border);
+  text-align: left;
+}
+.usage-table th { color: var(--text2); font-weight: 500; }
+
+/* Wider modal for recap/help */
+.modal-content.modal-wide {
+  max-width: 720px;
+  text-align: left;
+}
+
+/* Prose output (recap, prep) */
+.prose-output {
+  font-size: 0.85rem;
+  line-height: 1.55;
+  margin-top: 0.6rem;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+.prose-output h1, .prose-output h2, .prose-output h3, .prose-output h4 {
+  margin: 0.7rem 0 0.3rem 0;
+  color: var(--accent);
+}
+.prose-output p { margin: 0.3rem 0; }
+.prose-output ul, .prose-output ol { margin: 0.3rem 0; padding-left: 1.4rem; }
+.prose-output code {
+  background: var(--surface2);
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  font-size: 0.82em;
+}
+.prose-output pre {
+  background: var(--surface2);
+  padding: 0.6rem;
+  border-radius: var(--radius);
+  overflow-x: auto;
+  margin: 0.4rem 0;
+}
+
+/* Hotkey help */
+.hotkey-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.4rem 1rem;
+  margin-top: 0.6rem;
+  font-size: 0.78rem;
+  color: var(--text2);
+}
+kbd {
+  background: var(--surface2);
+  border: 1px solid var(--border2);
+  border-radius: 4px;
+  padding: 0.05rem 0.35rem;
+  font-family: ui-monospace, monospace;
+  font-size: 0.72rem;
+  color: var(--text);
+  margin: 0 0.15rem;
+}
+
+/* Answer card additions */
+.answer-card.refinement {
+  border-left: 3px solid var(--blue);
+}
+.answer-card .answer-toolbar {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+  margin-top: 0.5rem;
+  padding-top: 0.4rem;
+  border-top: 1px solid var(--border);
+}
+.chip-mini {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  padding: 0.18rem 0.5rem;
+  border-radius: 12px;
+  font-size: 0.68rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.15s;
+}
+.chip-mini:hover { color: var(--text); border-color: var(--border2); }
+.chip-mini.copy { margin-left: auto; }
+
+.answer-card .meta {
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+.answer-card .meta-mode {
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  background: var(--surface2);
+  padding: 0.05rem 0.35rem;
+  border-radius: 3px;
+  font-size: 0.6rem;
+}
+
+/* Document Picture-in-Picture window */
+.pip-root {
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+  height: 100vh;
+  padding: 0.6rem;
+  overflow-y: auto;
+}
+.pip-header {
+  font-size: 0.7rem;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.4rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border);
+}
+.pip-question {
+  font-size: 0.7rem;
+  color: var(--text2);
+  margin-bottom: 0.4rem;
+  font-style: italic;
+}
+
+/* Topbar wrap on narrow screens */
+@media (max-width: 900px) {
+  #topbar { flex-wrap: wrap; gap: 0.4rem; }
+  .topbar-left { flex-wrap: wrap; }
+  .mode-chips { width: 100%; }
+}
