@@ -42,6 +42,65 @@ function userKey(user) {
 }
 
 // =============================================================================
+// PER-USER RATE LIMITER (sliding window, in-memory)
+// =============================================================================
+// Protects expensive LLM endpoints from spam by an authenticated user. Each
+// endpoint has its own bucket and request budget per minute.
+const RATE_LIMITS = {
+  answer: { max: 30, windowMs: 60_000 },   // 30 LLM answers / min
+  prep: { max: 5, windowMs: 60_000 },      // 5 prep briefs / min
+  recap: { max: 5, windowMs: 60_000 },     // 5 recaps / min
+  classify: { max: 120, windowMs: 60_000 },// 120 cheap classifies / min
+  search: { max: 30, windowMs: 60_000 },   // 30 web searches / min
+};
+const rateBuckets = new Map(); // `${endpoint}:${user}` -> [timestamps]
+
+function checkRateLimit(endpoint, user) {
+  const cfg = RATE_LIMITS[endpoint];
+  if (!cfg) return { ok: true };
+  const key = `${endpoint}:${userKey(user)}`;
+  const now = Date.now();
+  const cutoff = now - cfg.windowMs;
+  const arr = (rateBuckets.get(key) || []).filter(t => t > cutoff);
+  if (arr.length >= cfg.max) {
+    const retryMs = arr[0] + cfg.windowMs - now;
+    return { ok: false, retryAfter: Math.ceil(retryMs / 1000), limit: cfg.max, windowMs: cfg.windowMs };
+  }
+  arr.push(now);
+  rateBuckets.set(key, arr);
+  // Light cleanup: every 200 inserts, prune expired buckets
+  if (rateBuckets.size > 200 && Math.random() < 0.05) {
+    for (const [k, ts] of rateBuckets) {
+      const fresh = ts.filter(t => t > cutoff);
+      if (fresh.length === 0) rateBuckets.delete(k);
+      else rateBuckets.set(k, fresh);
+    }
+  }
+  return { ok: true, remaining: cfg.max - arr.length };
+}
+
+function rateLimitMiddleware(endpoint) {
+  return (req, res, next) => {
+    const r = checkRateLimit(endpoint, req.authUser);
+    if (!r.ok) {
+      res.setHeader('Retry-After', String(r.retryAfter));
+      res.setHeader('X-RateLimit-Limit', String(r.limit));
+      res.setHeader('X-RateLimit-Remaining', '0');
+      return res.status(429).json({
+        error: 'Too many requests',
+        retryAfterSeconds: r.retryAfter,
+        limit: r.limit,
+        windowMs: r.windowMs,
+      });
+    }
+    if (typeof r.remaining === 'number') {
+      res.setHeader('X-RateLimit-Remaining', String(r.remaining));
+    }
+    next();
+  };
+}
+
+// =============================================================================
 // PRICING & USAGE TRACKING (Phase 1)
 // =============================================================================
 // Per-1M token prices (USD). Anthropic via OpenRouter passes through cache reads.
@@ -649,7 +708,7 @@ function modelId(model) {
 // =============================================================================
 // /api/answer — REVAMPED (Phase 1+2+3)
 // =============================================================================
-app.post(`${BASE_PATH}/api/answer`, async (req, res) => {
+app.post(`${BASE_PATH}/api/answer`, rateLimitMiddleware('answer'), async (req, res) => {
   const { question, transcript, model, enabledDocIds, mode = 'answer', refinement, persona, useRag } = req.body;
   const t0 = Date.now();
   console.log(`[answer] q="${(question || '').slice(0, 60)}" model=${model} mode=${mode} ref=${refinement || '-'}`);
@@ -759,7 +818,7 @@ app.post(`${BASE_PATH}/api/answer`, async (req, res) => {
 // =============================================================================
 // Cheap LLM classifier (Haiku) used by the frontend to decide whether a
 // transcript line is actually a question worth auto-answering.
-app.post(`${BASE_PATH}/api/classify`, async (req, res) => {
+app.post(`${BASE_PATH}/api/classify`, rateLimitMiddleware('classify'), async (req, res) => {
   const { text } = req.body || {};
   if (!text) return res.json({ isQuestion: false, score: 0 });
   if (!OPENROUTER_API_KEY) return res.status(500).json({ error: 'No API key' });
@@ -805,7 +864,7 @@ app.post(`${BASE_PATH}/api/classify`, async (req, res) => {
 // =============================================================================
 // /api/prep — Pre-interview prep (Phase 4)
 // =============================================================================
-app.post(`${BASE_PATH}/api/prep`, async (req, res) => {
+app.post(`${BASE_PATH}/api/prep`, rateLimitMiddleware('prep'), async (req, res) => {
   const { enabledDocIds, model, jobDescription } = req.body || {};
   if (!OPENROUTER_API_KEY) return res.status(500).json({ error: 'No API key' });
 
@@ -878,7 +937,7 @@ Be specific to the actual CV content. No generic advice.`,
 // =============================================================================
 // /api/recap — Post-interview recap (Phase 4)
 // =============================================================================
-app.post(`${BASE_PATH}/api/recap`, async (req, res) => {
+app.post(`${BASE_PATH}/api/recap`, rateLimitMiddleware('recap'), async (req, res) => {
   const { sessionId, model } = req.body || {};
   if (!sessionId) return res.status(400).json({ error: 'sessionId required' });
   if (!OPENROUTER_API_KEY) return res.status(500).json({ error: 'No API key' });
@@ -1059,7 +1118,7 @@ app.post(`${BASE_PATH}/api/calendar/import`, (req, res) => {
 // =============================================================================
 // Stubbed if TAVILY_API_KEY not set. Used by the answer endpoint when frontend
 // requests grounding for a specific question.
-app.post(`${BASE_PATH}/api/search`, async (req, res) => {
+app.post(`${BASE_PATH}/api/search`, rateLimitMiddleware('search'), async (req, res) => {
   const { query } = req.body || {};
   if (!query) return res.status(400).json({ error: 'query required' });
   if (!TAVILY_API_KEY) {
