@@ -6,6 +6,8 @@ const multer = require('multer');
 const fs = require('fs');
 const path = require('path');
 const pdfParse = require('pdf-parse');
+const { expressAuth } = require('/opt/apps/shared-auth');
+
 const app = express();
 app.disable('x-powered-by');
 const server = http.createServer(app);
@@ -14,10 +16,18 @@ const PORT = process.env.PORT || 3014;
 const BASE_PATH = '/Interview';
 const DEEPGRAM_API_KEY = process.env.DEEPGRAM_API_KEY;
 const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+
+const { verifySession } = require('/opt/apps/shared-auth');
+const cookie = require('cookie');
+
+const SESSION_SECRET = process.env.OTP_SESSION_SECRET || '';
 const wss = new WebSocketServer({ noServer: true });
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// OTP Authentication (shared-auth, same as other apps)
+app.use(expressAuth({ basePath: BASE_PATH, appName: 'Interview' }));
 
 app.use(BASE_PATH, express.static(path.join(__dirname, 'public')));
 
@@ -165,7 +175,7 @@ ${docTexts || '(No documents uploaded yet)'}`;
       headers: {
         'Authorization': `Bearer ${apiKey}`,
         'Content-Type': 'application/json',
-        'HTTP-Referer': `http://localhost:${PORT}/Interview`,
+        'HTTP-Referer': process.env.APP_URL || '',
         'X-Title': 'Interview Assistant'
       },
       body: JSON.stringify({
@@ -213,9 +223,18 @@ ${docTexts || '(No documents uploaded yet)'}`;
   res.end();
 });
 
-// --- WebSocket upgrade ---
+// --- WebSocket upgrade with session auth ---
 server.on('upgrade', (req, socket, head) => {
   if (req.url !== `${BASE_PATH}/ws`) {
+    socket.destroy();
+    return;
+  }
+  // Verify session cookie
+  const cookies = cookie.parse(req.headers.cookie || '');
+  const token = cookies['app_otp_session'];
+  const session = token ? verifySession(token, SESSION_SECRET) : null;
+  if (!session) {
+    socket.write('HTTP/1.1 401 Unauthorized\r\n\r\n');
     socket.destroy();
     return;
   }
