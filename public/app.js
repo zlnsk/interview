@@ -264,7 +264,9 @@ function createUtteranceEl(speaker, text, isFinal) {
   const isMe = speaker === state.mySpeaker;
   el.className = `utterance ${speakerClass} ${isFinal ? '' : 'interim'} ${isMe ? 'is-me' : ''}`;
   const label = isMe ? 'You' : `Speaker ${speaker + 1}`;
-  const badge = isMe ? '<span class="badge you">YOU</span>' : '';
+  const badge = isMe
+    ? '<span class="badge you">YOU</span>'
+    : '<span class="badge">INTERVIEWER</span>';
   const tagDiv = document.createElement('div');
   tagDiv.className = 'speaker-tag';
   tagDiv.innerHTML = `${esc(label)} ${badge}`;

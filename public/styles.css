@@ -1193,3 +1193,382 @@ body {
 }
 .drawer textarea { border-radius: 12px !important; }
 .drawer .btn-primary { font-weight: 600 !important; padding: 0.5rem 1rem !important; }
+
+/* ==================== Clean redesign — Cockpit layout (2026-04-16) ====================
+   Two-column cockpit on wide screens: transcript (left) | AI answers (right).
+   Quiet chrome: softer gradients, outline-variant borders, pill controls everywhere,
+   clearer role chips (INTERVIEWER / YOU), pill buttons in modals.
+   ===================================================================================== */
+
+/* Dial back the decorative body gradient — quieter backdrop */
+body {
+  background:
+    radial-gradient(1400px circle at 0% -20%, hsl(var(--m3-source-hue) 60% 78% / 0.10), transparent 60%),
+    var(--m3-surface) !important;
+}
+@media (prefers-color-scheme: dark) {
+  body {
+    background:
+      radial-gradient(1400px circle at 0% -20%, hsl(var(--m3-source-hue) 45% 28% / 0.18), transparent 60%),
+      var(--m3-surface) !important;
+  }
+}
+
+/* App shell — two-column cockpit on desktop */
+#app {
+  display: grid !important;
+  grid-template-rows: auto 1fr;
+  grid-template-columns: 1fr;
+  height: 100vh;
+}
+#app > header#topbar { grid-column: 1 / -1; }
+
+@media (min-width: 980px) {
+  #app {
+    grid-template-columns: minmax(320px, 1fr) minmax(420px, 1.3fr);
+    grid-template-rows: auto 1fr;
+    grid-template-areas:
+      "topbar topbar"
+      "transcript answers";
+  }
+  #app > header#topbar { grid-area: topbar; }
+  #transcriptPanel { grid-area: transcript; }
+  #answerPanel { grid-area: answers; }
+}
+
+/* Panels — flat, no heavy borders, column shaping */
+#answerPanel,
+#transcriptPanel {
+  flex: initial !important;
+  max-width: none !important;
+  width: auto !important;
+  margin: 0 !important;
+  min-height: 0 !important;
+  border-bottom: none !important;
+  border-left: 1px solid var(--m3-outline-variant, var(--border));
+  background: transparent;
+}
+#transcriptPanel { border-left: none; }
+
+/* On narrow screens, stack them (answers on top, transcript below) */
+@media (max-width: 979px) {
+  #app {
+    grid-template-rows: auto minmax(280px, 2fr) minmax(160px, 1fr);
+    grid-template-areas:
+      "topbar"
+      "answers"
+      "transcript";
+  }
+  #app > header#topbar { grid-area: topbar; }
+  #answerPanel {
+    grid-area: answers;
+    border-left: none;
+    border-bottom: 1px solid var(--m3-outline-variant, var(--border)) !important;
+  }
+  #transcriptPanel { grid-area: transcript; }
+}
+
+/* Topbar — quieter */
+#topbar {
+  border-bottom: 1px solid var(--m3-outline-variant, var(--border)) !important;
+  background: color-mix(in srgb, var(--m3-surface) 85%, transparent) !important;
+}
+
+/* Panel headers — softer, flat */
+.panel-header {
+  border-bottom: 1px solid var(--m3-outline-variant, var(--border)) !important;
+  padding: 0.75rem 1.25rem !important;
+  background: transparent;
+}
+.panel-header h2 {
+  font-size: 0.7rem !important;
+  letter-spacing: 0.14em !important;
+}
+
+/* Scroll areas — generous padding */
+.scroll-area { padding: 1rem 1.25rem !important; }
+
+/* =============== Role chips =============== */
+.utterance {
+  margin-bottom: 1rem !important;
+  padding: 0 !important;
+}
+.utterance .speaker-tag {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 0.4rem;
+  margin-bottom: 0.35rem !important;
+  font-size: 0.65rem !important;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.utterance .speaker-tag .badge {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 0.6rem !important;
+  border-radius: 9999px !important;
+  font-size: 0.6rem !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  background: color-mix(in srgb, var(--m3-primary) 15%, transparent) !important;
+  color: var(--m3-primary) !important;
+  border: 1px solid color-mix(in srgb, var(--m3-primary) 35%, transparent);
+}
+.utterance.is-me .text { opacity: 0.6 !important; }
+.utterance .speaker-tag .badge.you {
+  background: transparent !important;
+  color: var(--m3-on-surface-variant, var(--text2)) !important;
+  border: 1px solid var(--m3-outline-variant, var(--border));
+}
+/* Non-me speakers get a subtle interviewer accent in their tag color */
+.speaker-0 .speaker-tag,
+.speaker-1 .speaker-tag,
+.speaker-2 .speaker-tag,
+.speaker-3 .speaker-tag {
+  color: var(--m3-on-surface, var(--text)) !important;
+}
+
+/* Transcript body */
+.utterance .text {
+  font-size: 0.9rem !important;
+  line-height: 1.55 !important;
+  color: var(--m3-on-surface, var(--text));
+  padding-left: 0.1rem;
+}
+.utterance.interim .text {
+  color: var(--m3-on-surface-variant, var(--text2)) !important;
+  font-style: italic;
+}
+
+/* Speaker legend — pill chips */
+.speaker-legend .legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 9999px;
+  border: 1px solid var(--m3-outline-variant, var(--border));
+  font-size: 0.65rem;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--m3-on-surface-variant, var(--text2));
+}
+
+/* =============== Answer cards — flat, airy =============== */
+.answer-card {
+  background: var(--m3-surface-container-low, var(--surface)) !important;
+  border: 1px solid var(--m3-outline-variant, var(--border)) !important;
+  border-radius: 20px !important;
+  padding: 16px 20px !important;
+  margin-bottom: 12px !important;
+  box-shadow: none !important;
+}
+.answer-card.refinement {
+  border-left: 3px solid var(--m3-primary, var(--blue)) !important;
+}
+.answer-card .question {
+  font-size: 0.7rem !important;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--m3-on-surface-variant, var(--text2)) !important;
+  border-bottom: 1px solid var(--m3-outline-variant, var(--border)) !important;
+  padding-bottom: 0.6rem !important;
+  margin-bottom: 0.7rem !important;
+  font-weight: 500;
+}
+.answer-card .answer-text { font-size: 0.9rem !important; line-height: 1.6 !important; }
+.answer-card .meta {
+  margin-top: 0.7rem !important;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--m3-outline-variant, var(--border));
+  font-size: 0.65rem !important;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--m3-on-surface-variant, var(--text2)) !important;
+}
+.answer-card .answer-toolbar {
+  border-top: 1px solid var(--m3-outline-variant, var(--border)) !important;
+  margin-top: 0.7rem !important;
+  padding-top: 0.6rem !important;
+  gap: 0.35rem !important;
+}
+
+/* Chip-mini — pill */
+.chip-mini {
+  border-radius: 9999px !important;
+  padding: 0.25rem 0.7rem !important;
+  font-size: 0.68rem !important;
+  letter-spacing: 0.04em;
+  background: transparent !important;
+  border: 1px solid var(--m3-outline-variant, var(--border)) !important;
+  color: var(--m3-on-surface-variant, var(--text2)) !important;
+}
+.chip-mini:hover {
+  color: var(--m3-on-surface, var(--text)) !important;
+  border-color: var(--m3-outline, var(--border2)) !important;
+  background: var(--m3-surface-container-high, var(--surface2)) !important;
+}
+
+/* =============== Modals — pill buttons, quiet chrome =============== */
+.modal-content {
+  border-radius: 28px !important;
+  padding: 28px !important;
+  border: 1px solid var(--m3-outline-variant, var(--border)) !important;
+  background: var(--m3-surface-container-high, var(--surface)) !important;
+}
+.modal-content h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin-bottom: 0.4rem;
+}
+.modal-content p {
+  font-size: 0.88rem !important;
+  line-height: 1.55;
+  color: var(--m3-on-surface-variant, var(--text2)) !important;
+}
+
+/* Modal buttons — pill everywhere */
+.modal-content button,
+#speakerOptions button {
+  border-radius: 9999px !important;
+  font-weight: 500 !important;
+  font-size: 0.85rem !important;
+  padding: 0.6rem 1.1rem !important;
+  border: 1px solid var(--m3-outline-variant, var(--border)) !important;
+  background: transparent !important;
+  color: var(--m3-on-surface, var(--text)) !important;
+  transition: background 0.15s, border-color 0.15s;
+}
+.modal-content button:hover,
+#speakerOptions button:hover {
+  background: var(--m3-surface-container-high, var(--surface2)) !important;
+  border-color: var(--m3-outline, var(--border2)) !important;
+}
+#speakerOptions {
+  gap: 0.5rem !important;
+  margin: 1rem 0 !important;
+}
+#speakerOptions button {
+  padding: 0.75rem 1rem !important;
+  text-align: left;
+}
+.modal-content .btn-ghost {
+  border: 1px solid var(--m3-outline-variant, var(--border)) !important;
+  color: var(--m3-on-surface-variant, var(--text2)) !important;
+}
+
+/* Hotkey grid — airy */
+.hotkey-grid {
+  gap: 0.6rem 1.25rem !important;
+  font-size: 0.82rem !important;
+  color: var(--m3-on-surface, var(--text)) !important;
+  margin-top: 1rem !important;
+}
+.hotkey-grid kbd {
+  border-radius: 6px !important;
+  font-size: 0.7rem !important;
+  padding: 2px 6px !important;
+}
+
+/* =============== Drawer — quieter tabs =============== */
+.drawer {
+  width: 420px !important;
+  border-left: 1px solid var(--m3-outline-variant, var(--border)) !important;
+  box-shadow: none !important;
+  background: var(--m3-surface, var(--surface)) !important;
+}
+.drawer-tabs .tab {
+  letter-spacing: 0.04em;
+  font-size: 0.8rem !important;
+  padding: 12px 14px !important;
+}
+.drawer-body { padding: 20px !important; }
+
+/* Drawer form inputs — outlineVariant borders, pill */
+.drawer input[type="text"],
+.drawer textarea,
+.drawer select {
+  background: transparent !important;
+  border: 1px solid var(--m3-outline-variant, var(--border)) !important;
+  color: var(--m3-on-surface, var(--text)) !important;
+  border-radius: 12px !important;
+  padding: 0.6rem 0.8rem !important;
+  font-size: 0.85rem !important;
+}
+.drawer input[type="text"]:focus,
+.drawer textarea:focus,
+.drawer select:focus {
+  outline: none;
+  border-color: var(--m3-primary, var(--accent)) !important;
+}
+.drawer textarea { border-radius: 16px !important; }
+
+/* Doc list rows — flat, generous */
+.doc-item {
+  padding: 14px 0 !important;
+  border-color: var(--m3-outline-variant, var(--border)) !important;
+}
+.doc-item .doc-name { font-weight: 500 !important; font-size: 0.9rem !important; }
+.doc-item .doc-type {
+  font-size: 0.65rem !important;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+.doc-item .btn-delete {
+  border-radius: 9999px !important;
+  padding: 0.4rem 0.9rem !important;
+  font-size: 0.75rem !important;
+}
+
+/* Session/cal items */
+.session-item,
+.cal-item {
+  padding: 14px 0 !important;
+  border-color: var(--m3-outline-variant, var(--border)) !important;
+}
+
+/* Status pill — no harsh colored background */
+.status-pill {
+  background: transparent !important;
+  border: 1px solid var(--m3-outline-variant, var(--border)) !important;
+}
+.status-pill.active {
+  background: color-mix(in srgb, var(--green) 12%, transparent) !important;
+  border-color: color-mix(in srgb, var(--green) 35%, transparent) !important;
+}
+
+/* Empty states — quiet */
+.empty-state {
+  gap: 0.75rem !important;
+  color: var(--m3-on-surface-variant, var(--text2)) !important;
+}
+.empty-state p:first-child { font-size: 0.95rem !important; }
+.empty-state .hint {
+  font-size: 0.75rem !important;
+  opacity: 0.8 !important;
+  letter-spacing: 0.02em;
+}
+
+/* Usage cards — flat */
+.usage-card {
+  background: transparent !important;
+  border: 1px solid var(--m3-outline-variant, var(--border)) !important;
+  border-radius: 16px !important;
+  padding: 0.75rem 1rem !important;
+}
+.usage-card-label { letter-spacing: 0.1em !important; }
+.usage-card-value { font-size: 1.2rem !important; }
+.usage-table th,
+.usage-table td { border-color: var(--m3-outline-variant, var(--border)) !important; }
+
+/* Usage pill in panel header */
+.panel-header .usage-pill {
+  border: 1px solid var(--m3-outline-variant, var(--border)) !important;
+  background: transparent !important;
+}
+
+/* ================== End cockpit redesign ================== */
