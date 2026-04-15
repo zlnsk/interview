@@ -232,7 +232,7 @@ function handleDeepgramMessage(data) {
       }
       // Detect questions from non-me speakers
       if (speaker !== state.mySpeaker && isQuestionHeuristic(transcript)) {
-        scheduleAnswer(transcript);
+        scheduleAnswer(extractQuestion(transcript));
       } else if (speaker !== state.mySpeaker && state.pendingQuestion && state.questionDebounce) {
         state.pendingQuestion += ' ' + transcript;
       }
@@ -279,11 +279,84 @@ function createUtteranceEl(speaker, text, isFinal) {
 // =============================================================================
 // Question detection (heuristic + optional classifier gating)
 // =============================================================================
+const Q_WORDS = ['what', 'why', 'how', 'when', 'where', 'who', 'which', 'can you', 'could you', 'tell me', 'describe', 'explain', 'walk me through', 'give me', 'do you', 'have you', 'are you', 'is there', 'would you'];
+const Q_MARKERS = ['next question is', 'my next question', 'can i ask', 'question for you', 'i want to ask'];
+
+function _splitSegments(text) {
+  // Split on sentence terminators, then further split on question markers.
+  const parts = text.split(/[.?!]+/).map(s => s.trim()).filter(Boolean);
+  const out = [];
+  for (const part of parts) {
+    const lower = part.toLowerCase();
+    let markerIdx = -1;
+    let markerLen = 0;
+    for (const m of Q_MARKERS) {
+      const i = lower.indexOf(m);
+      if (i !== -1 && (markerIdx === -1 || i < markerIdx)) {
+        markerIdx = i;
+        markerLen = m.length;
+      }
+    }
+    if (markerIdx !== -1) {
+      const before = part.slice(0, markerIdx).trim();
+      const after = part.slice(markerIdx + markerLen).trim();
+      if (before) out.push(before);
+      if (after) out.push(after);
+    } else {
+      out.push(part);
+    }
+  }
+  return out.map(s => s.replace(/^[,"'\s]+|[,"'\s]+$/g, '')).filter(Boolean);
+}
+
+function _segmentLooksLikeQuestion(seg) {
+  if (!seg) return false;
+  const wordCount = seg.split(/\s+/).filter(Boolean).length;
+  if (wordCount < 3) return false;
+  const lower = seg.toLowerCase();
+  return Q_WORDS.some(w => lower.startsWith(w));
+}
+
 function isQuestionHeuristic(text) {
-  const lower = text.toLowerCase().trim();
+  if (!text) return false;
+  const trimmed = text.trim();
+  const lower = trimmed.toLowerCase();
+  // Fast paths
   if (lower.endsWith('?')) return true;
-  const qWords = ['what', 'why', 'how', 'when', 'where', 'who', 'which', 'can you', 'could you', 'tell me', 'describe', 'explain', 'walk me through', 'give me', 'do you', 'have you', 'are you', 'is there', 'would you'];
-  return qWords.some(w => lower.startsWith(w));
+  if (trimmed.includes('?')) return true;
+  if (Q_WORDS.some(w => lower.startsWith(w))) return true;
+  // Mid-sentence: check each segment
+  const segments = _splitSegments(trimmed);
+  return segments.some(_segmentLooksLikeQuestion);
+}
+
+function extractQuestion(text) {
+  if (!text) return text;
+  const trimmed = text.trim();
+  const lower = trimmed.toLowerCase();
+  // If whole thing already looks like a question, return as-is.
+  if (lower.endsWith('?') || Q_WORDS.some(w => lower.startsWith(w))) return trimmed;
+  // Prefer a Q-word-starting segment (this also strips leading markers like
+  // "next question is,") — gives the cleanest question to the LLM.
+  const segments = _splitSegments(trimmed);
+  for (const seg of segments) {
+    if (_segmentLooksLikeQuestion(seg)) {
+      // If this segment has no trailing '?' but the original does, append one.
+      if (!seg.endsWith('?') && trimmed.includes('?')) return seg + '?';
+      return seg;
+    }
+  }
+  // Fallback: find a literal '?' and return the sentence ending there.
+  const qIdx = trimmed.indexOf('?');
+  if (qIdx !== -1) {
+    let start = 0;
+    for (let i = qIdx - 1; i >= 0; i--) {
+      if (/[.?!]/.test(trimmed[i])) { start = i + 1; break; }
+    }
+    const seg = trimmed.slice(start, qIdx + 1).trim();
+    if (seg.split(/\s+/).filter(Boolean).length >= 3) return seg;
+  }
+  return trimmed;
 }
 
 // Refinement intent detection (client-side, regex)
