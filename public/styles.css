@@ -1078,4 +1078,122 @@ body {
 /* ================== End M3 Visible Integration =================== */
 
 /* M3 canonical brand title — compact override for topbar */
+<<<<<<< HEAD
 #topbar .m3-brand-title { margin: 0 !important; padding: 0 !important; font-size: 1rem !important; }
+=======
+.topbar .m3-brand-title { margin: 0 !important; padding: 0 !important; font-size: 1rem !important; }
+
+/* ================== Consistency lock (2026-04-15) ==================
+   Unify font sizes, pill/button heights across topbar + panel chrome.
+   3 type sizes only: 0.75rem (label/caption), 0.85rem (body/UI), 1rem (input/title).
+   ================================================================== */
+:root {
+  --ui-h: 32px;
+  --ui-h-lg: 36px;
+  --ui-fs: 0.8rem;
+  --ui-fs-sm: 0.72rem;
+  --ui-radius: 9999px;
+}
+
+/* Topbar — single height, single font-size for ALL chrome */
+#topbar { padding: 0.5rem 1rem !important; gap: 0.5rem; }
+#topbar .topbar-left h1.m3-brand-title {
+  font-size: 1rem !important;
+  letter-spacing: 0.18em !important;
+  font-weight: 700 !important;
+  margin: 0 !important; padding: 0 !important;
+}
+#topbar .status-pill,
+#topbar .mode-chips .chip,
+#topbar select#modelSelect {
+  height: var(--ui-h);
+  padding: 0 0.75rem !important;
+  font-size: var(--ui-fs) !important;
+  font-weight: 500 !important;
+  border-radius: var(--ui-radius) !important;
+  border: 1px solid var(--border2) !important;
+  background: var(--surface2) !important;
+  color: var(--text2) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.35rem;
+  line-height: 1;
+  letter-spacing: 0;
+  text-transform: none !important;
+}
+#topbar .mode-chips .chip.active {
+  background: var(--surface) !important;
+  color: var(--text) !important;
+  border-color: var(--text2) !important;
+}
+#topbar .btn-icon {
+  width: var(--ui-h) !important;
+  height: var(--ui-h) !important;
+  border-radius: var(--ui-radius) !important;
+  border: 1px solid var(--border2) !important;
+  background: transparent !important;
+  color: var(--text) !important;
+}
+#topbar .btn-primary,
+#topbar .btn-danger {
+  height: var(--ui-h-lg);
+  padding: 0 1rem !important;
+  font-size: var(--ui-fs) !important;
+  font-weight: 600 !important;
+  border-radius: var(--ui-radius) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  gap: 0.4rem;
+  line-height: 1;
+}
+
+/* Panel headers — single caps style, single height */
+.panel-header { padding: 0.5rem 1rem !important; }
+.panel-header h2 {
+  font-size: var(--ui-fs-sm) !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.12em !important;
+  text-transform: uppercase !important;
+  color: var(--text2) !important;
+}
+.panel-header .header-actions { display: inline-flex; gap: 0.4rem; align-items: center; }
+.panel-header .usage-pill,
+.panel-header .btn-ghost {
+  height: var(--ui-h);
+  padding: 0 0.75rem !important;
+  font-size: var(--ui-fs) !important;
+  font-weight: 500 !important;
+  border-radius: var(--ui-radius) !important;
+  border: 1px solid var(--border2) !important;
+  background: var(--surface2) !important;
+  color: var(--text2) !important;
+  display: inline-flex !important;
+  align-items: center !important;
+  line-height: 1;
+}
+.panel-header .btn-ghost { background: transparent !important; }
+
+/* Empty state + transcript text — collapse to 2 sizes */
+.empty-state { gap: 0.5rem !important; font-size: 0.9rem !important; }
+.empty-state .hint { font-size: var(--ui-fs) !important; opacity: 0.7 !important; }
+.utterance .text,
+.answer-card .answer-body { font-size: 0.9rem !important; line-height: 1.5 !important; }
+.utterance .speaker-tag { font-size: var(--ui-fs-sm) !important; }
+.utterance .speaker-tag .badge { font-size: var(--ui-fs-sm) !important; padding: 0.1rem 0.4rem !important; border-radius: var(--ui-radius) !important; }
+
+/* Drawer — unify form chrome */
+.drawer-tabs .tab,
+.drawer select,
+.drawer input[type="text"],
+.drawer textarea,
+.drawer .btn-ghost,
+.drawer .btn-primary,
+.drawer .btn-sm,
+.drawer .file-input-label {
+  font-size: var(--ui-fs) !important;
+  font-weight: 500 !important;
+  border-radius: var(--ui-radius) !important;
+}
+.drawer textarea { border-radius: 12px !important; }
+.drawer .btn-primary { font-weight: 600 !important; padding: 0.5rem 1rem !important; }
+>>>>>>> a18a490 (interview: consistency lock for fonts, pills, and buttons)
