@@ -19,7 +19,7 @@ const state = {
   lastAnswerText: '',        // for clipboard copy + refinement
   lastAnswerCard: null,      // DOM ref to most recent answer card
   speakerModalShown: false,
-  mode: 'answer',
+  mode: 'followup',
   personas: [],
   selectedPersona: '',
   ragMode: false,
@@ -57,8 +57,6 @@ const usagePill = $('#usagePill');
 const ragToggle = $('#ragToggle');
 const personaForm = $('#personaForm');
 const personasList = $('#personasList');
-const calendarForm = $('#calendarForm');
-const calendarList = $('#calendarList');
 const sessionsList = $('#sessionsList');
 const usageStats = $('#usageStats');
 const recapModal = $('#recapModal');
@@ -681,64 +679,7 @@ if (personaForm) personaForm.addEventListener('submit', async (e) => {
 });
 
 // =============================================================================
-// Calendar
-// =============================================================================
-async function loadCalendar() {
-  const res = await fetch('/Interview/api/calendar');
-  const data = await res.json();
-  if (!calendarList) return;
-  if (!data.configured) {
-    calendarList.innerHTML = '<p class="hint-text">Not configured. Save an .ics URL above.</p>';
-    return;
-  }
-  if (!data.events || data.events.length === 0) {
-    calendarList.innerHTML = '<p class="hint-text">No upcoming interview events found in the next 14 days.</p>';
-    return;
-  }
-  calendarList.innerHTML = data.events.map((e, i) => {
-    const dt = new Date(e.start);
-    return `
-      <div class="cal-item">
-        <div class="cal-info">
-          <strong>${escapeHtml(e.summary)}</strong>
-          <div class="hint-text">${dt.toLocaleString()} ${e.location ? ' · ' + escapeHtml(e.location) : ''}</div>
-          ${e.description ? `<details><summary>Description</summary><pre>${escapeHtml(e.description.slice(0, 2000))}</pre></details>` : ''}
-        </div>
-        ${e.description ? `<button class="btn-primary btn-sm" data-import-cal="${i}">Import as JD</button>` : ''}
-      </div>
-    `;
-  }).join('');
-  calendarList.querySelectorAll('[data-import-cal]').forEach(b => {
-    b.addEventListener('click', async () => {
-      const ev = data.events[parseInt(b.dataset.importCal)];
-      await fetch('/Interview/api/calendar/import', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name: ev.summary, description: ev.description }),
-      });
-      loadDocuments();
-      switchTab('docs');
-    });
-  });
-}
 
-if (calendarForm) calendarForm.addEventListener('submit', async (e) => {
-  e.preventDefault();
-  const icsUrl = $('#icsUrl').value.trim();
-  await fetch('/Interview/api/calendar', {
-    method: 'PUT', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ icsUrl }),
-  });
-  loadCalendar();
-});
-
-$('#btnClearCal')?.addEventListener('click', async () => {
-  $('#icsUrl').value = '';
-  await fetch('/Interview/api/calendar', {
-    method: 'PUT', headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ icsUrl: '' }),
-  });
-  loadCalendar();
-});
 
 // =============================================================================
 // Sessions & Recap
@@ -941,7 +882,6 @@ function refreshActiveTab() {
   const active = $('.tab-pane.active')?.dataset.pane;
   if (active === 'docs') loadDocuments();
   else if (active === 'personas') loadPersonas();
-  else if (active === 'calendar') loadCalendar();
   else if (active === 'sessions') loadSessions();
   else if (active === 'usage') loadUsage();
 }

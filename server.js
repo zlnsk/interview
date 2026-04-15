@@ -204,16 +204,15 @@ const MODE_PROMPTS = {
 
 ${BASE_RULES}
 
-Length: MAX 90 words for simple questions, 130 for behavioral questions.`,
+CRITICAL: NEVER ask questions back to the user. You are generating what the user should SAY to the interviewer — only provide answers.
 
-  clarify: `You are a live interview assistant. The user wants to BUY TIME by asking the interviewer a clarifying question.
+If the interviewer's question is ambiguous and has two plausible interpretations, present BOTH answers as two clearly-labelled branches:
+**Option A — <short label>:** ...answer...
+**Option B — <short label>:** ...answer...
+Keep each branch tight. The user will pick the one that fits.
 
-Generate ONE short clarifying question the user can ask the interviewer to make sure they understand the question correctly. Be conversational, not robotic. MAX 25 words. No preamble.
+Length: MAX 90 words per branch (180 total when ambiguous), 130 for behavioral questions.`,
 
-Examples:
-- "Just to make sure I understand — are you asking about X or Y?"
-- "Could you tell me more about the team size you have in mind?"
-- "When you say performance, do you mean latency or throughput?"`,
 
   followup: `You are a live interview assistant. After the interviewer's question, suggest 2-3 smart follow-up questions THE USER can ask back to show curiosity, depth, and engagement.
 
@@ -221,50 +220,8 @@ ${BASE_RULES}
 
 Output: numbered list of 2-3 short questions, max 15 words each. No preamble.`,
 
-  star: `You are a live interview assistant. Generate a STAR-format answer (Situation / Task / Action / Result) using examples from the user's CV.
 
-${BASE_RULES}
 
-Length: MAX 160 words.
-
-Format STRICTLY:
-### Situation
-2-3 sentences setting context.
-### Task
-What needed to be solved.
-### Action
-What I personally did, with concrete technical details.
-### Result
-Measurable outcome — numbers if available.`,
-
-  code: `You are a live coding-interview assistant. The user is in a coding screen and needs to talk through a problem while typing.
-
-Output STRICTLY in 4 sections, in this exact order:
-
-### [SAY THIS FIRST]
-20-30s spoken intro: restate the problem, list the edge cases you'd clarify, propose your approach with a one-line reason. First person.
-
-### [THE CODE]
-\`\`\`<language>
-// fully working solution with brief inline comments
-\`\`\`
-Default to Python unless the question hints at another language.
-
-### [SAY THIS AFTER]
-20-30s spoken walk-through of the code while pasting/typing. First person.
-
-### [COMPLEXITY]
-- Time: O(?)
-- Space: O(?)`,
-
-  what_to_say: `You are a live interview assistant. The user has gone silent and doesn't know what to say next. Generate a SHORT bridge sentence they can say RIGHT NOW.
-
-MAX 15 words. First person. Natural and conversational. No preamble.
-
-Examples:
-- "Let me think about that for a second..."
-- "Great question — let me structure this properly."
-- "Sorry, could you repeat the last part of the question?"`,
 };
 
 const REFINEMENT_INSTRUCTIONS = {
@@ -1010,8 +967,6 @@ Numbered list of 5.
 });
 
 // =============================================================================
-// /api/calendar — ICS feed import (Phase 4)
-// =============================================================================
 // Lightweight, dependency-free .ics parser. Extracts SUMMARY, DESCRIPTION,
 // DTSTART of upcoming events from a public/secret ICS URL.
 function parseICS(text, opts = {}) {
@@ -1048,72 +1003,6 @@ function parseICalDate(s) {
   const date = new Date(iso);
   return isNaN(date.getTime()) ? null : date.toISOString();
 }
-
-const CALENDAR_PREFS_FILE = path.join(DATA_DIR, 'calendar-prefs.json');
-function loadCalPrefs() {
-  if (!fs.existsSync(CALENDAR_PREFS_FILE)) return {};
-  try { return JSON.parse(fs.readFileSync(CALENDAR_PREFS_FILE, 'utf8')); } catch { return {}; }
-}
-function saveCalPrefs(p) { fs.writeFileSync(CALENDAR_PREFS_FILE, JSON.stringify(p, null, 2)); }
-
-app.get(`${BASE_PATH}/api/calendar`, async (req, res) => {
-  const all = loadCalPrefs();
-  const userCfg = all[userKey(req.authUser)];
-  if (!userCfg || !userCfg.icsUrl) return res.json({ events: [], configured: false });
-  try {
-    const r = await fetch(userCfg.icsUrl, { headers: { 'User-Agent': 'InterviewAssist/1.1' } });
-    if (!r.ok) throw new Error(`ICS fetch ${r.status}`);
-    const text = await r.text();
-    const events = parseICS(text);
-    const now = Date.now();
-    const horizon = now + 14 * 24 * 3600 * 1000; // next 14 days
-    const upcoming = events
-      .filter(e => {
-        const t = new Date(e.start).getTime();
-        return t >= now && t <= horizon;
-      })
-      .filter(e => /interview|screen|chat|round|coding|technical|behavioral|hiring/i.test(e.summary + ' ' + (e.description || '')))
-      .sort((a, b) => new Date(a.start) - new Date(b.start))
-      .slice(0, 20);
-    res.json({ events: upcoming, configured: true });
-  } catch (e) {
-    res.status(500).json({ error: e.message, configured: true });
-  }
-});
-
-app.put(`${BASE_PATH}/api/calendar`, (req, res) => {
-  const { icsUrl } = req.body || {};
-  const all = loadCalPrefs();
-  if (!icsUrl) {
-    delete all[userKey(req.authUser)];
-  } else {
-    if (!/^https?:\/\//.test(icsUrl)) return res.status(400).json({ error: 'Must be http(s) URL' });
-    all[userKey(req.authUser)] = { icsUrl: String(icsUrl).slice(0, 1000), updatedAt: new Date().toISOString() };
-  }
-  saveCalPrefs(all);
-  res.json({ ok: true });
-});
-
-// Pull a single event's description into a doc
-app.post(`${BASE_PATH}/api/calendar/import`, (req, res) => {
-  const { name, description } = req.body || {};
-  if (!description) return res.status(400).json({ error: 'description required' });
-  const id = 'cal_' + Date.now().toString(36);
-  const doc = {
-    id,
-    name: name || 'Calendar import',
-    type: 'job_description',
-    text: description,
-    chunks: chunkText(description),
-    chars: description.length,
-    uploadedAt: new Date().toISOString(),
-  };
-  documents.set(id, doc);
-  // Persist
-  fs.writeFileSync(path.join(UPLOADS_DIR, id), description);
-  saveMeta();
-  res.json({ id, name: doc.name, type: doc.type });
-});
 
 // =============================================================================
 // /api/search — Tavily web search grounding (Phase 5)

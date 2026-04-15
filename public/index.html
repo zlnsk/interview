@@ -22,12 +22,7 @@
         </div>
         <!-- Mode chips (Phase 2) -->
         <div class="mode-chips" id="modeChips">
-          <button class="chip active" data-mode="answer" title="Answer (1)">Answer</button>
-          <button class="chip" data-mode="clarify" title="Clarify (2)">Clarify</button>
           <button class="chip" data-mode="followup" title="Follow-ups (3)">Follow-ups</button>
-          <button class="chip" data-mode="star" title="STAR (4)">STAR</button>
-          <button class="chip" data-mode="code" title="Code (5)">Code</button>
-          <button class="chip" data-mode="what_to_say" title="Bridge (6)">Bridge</button>
         </div>
       </div>
       <div class="topbar-right">
@@ -95,7 +90,6 @@
       <div class="drawer-tabs">
         <button class="tab active" data-tab="docs">Docs</button>
         <button class="tab" data-tab="personas">Personas</button>
-        <button class="tab" data-tab="calendar">Calendar</button>
         <button class="tab" data-tab="sessions">Sessions</button>
         <button class="tab" data-tab="usage">Usage</button>
         <button class="tab" data-tab="prep">Prep</button>
@@ -140,29 +134,12 @@
               <option value="opus">Opus</option>
             </select>
             <select id="personaDefaultMode">
-              <option value="answer">Default mode: Answer</option>
-              <option value="clarify">Default mode: Clarify</option>
               <option value="followup">Default mode: Follow-ups</option>
-              <option value="star">Default mode: STAR</option>
-              <option value="code">Default mode: Code</option>
             </select>
             <button type="submit" class="btn-primary btn-sm">Save</button>
           </div>
         </form>
         <div id="personasList"></div>
-      </section>
-
-      <!-- Calendar tab -->
-      <section class="tab-pane" data-pane="calendar">
-        <p class="hint-text">Paste an .ics URL (Google Calendar → Settings → Integrate → Secret address) to auto-pull upcoming interviews and import the JD from event descriptions.</p>
-        <form id="calendarForm" class="stacked-form">
-          <input type="url" id="icsUrl" placeholder="https://calendar.google.com/calendar/ical/.../basic.ics">
-          <div class="row">
-            <button type="submit" class="btn-primary btn-sm">Save & refresh</button>
-            <button type="button" id="btnClearCal" class="btn-ghost">Clear</button>
-          </div>
-        </form>
-        <div id="calendarList"></div>
       </section>
 
       <!-- Sessions tab -->
@@ -240,7 +217,7 @@
       </div>
       <div class="hotkey-grid">
         <div><kbd>Space</kbd> Answer the last detected question</div>
-        <div><kbd>1</kbd>–<kbd>6</kbd> Switch mode (Answer/Clarify/Follow-ups/STAR/Code/Bridge)</div>
+        <div><kbd>1</kbd> Follow-ups</div>
         <div><kbd>R</kbd> Refine last answer: shorter</div>
         <div><kbd>Shift</kbd>+<kbd>R</kbd> Refine: longer</div>
         <div><kbd>E</kbd> Refine: add example</div>
