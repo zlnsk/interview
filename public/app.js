@@ -708,12 +708,13 @@ function renderPersonas() {
 }
 
 function renderPersonaSelect() {
+  if (!personaSelect) return;
   personaSelect.innerHTML = '<option value="">Default</option>' +
     state.personas.map(p => `<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');
   personaSelect.value = state.selectedPersona || '';
 }
 
-personaSelect.addEventListener('change', () => { state.selectedPersona = personaSelect.value; });
+personaSelect?.addEventListener('change', () => { state.selectedPersona = personaSelect.value; });
 
 function editPersona(id) {
   const p = state.personas.find(x => x.id === id);
@@ -1052,35 +1053,14 @@ btnClearAnswers.addEventListener('click', () => {
 });
 
 // =============================================================================
-// Theme toggle (existing)
+// Theme (auto, follows system)
 // =============================================================================
 function getTheme() { return localStorage.getItem('interview-theme') || 'auto'; }
 function applyTheme(theme) {
   if (theme === 'auto') document.documentElement.removeAttribute('data-theme');
   else document.documentElement.setAttribute('data-theme', theme);
-  updateThemeIcon();
-}
-function updateThemeIcon() {
-  const btn = document.getElementById('btnTheme');
-  if (!btn) return;
-  const isDark = document.documentElement.getAttribute('data-theme') === 'dark' ||
-    (!document.documentElement.getAttribute('data-theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
-  btn.textContent = isDark ? '\u2600' : '\u263E';
-  btn.title = isDark ? 'Switch to light' : 'Switch to dark';
-}
-function toggleTheme() {
-  const current = document.documentElement.getAttribute('data-theme');
-  const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const isDark = current === 'dark' || (!current && systemDark);
-  const next = isDark ? 'light' : 'dark';
-  localStorage.setItem('interview-theme', next);
-  applyTheme(next);
 }
 applyTheme(getTheme());
-document.getElementById('btnTheme')?.addEventListener('click', toggleTheme);
-window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
-  if (getTheme() === 'auto') updateThemeIcon();
-});
 
 // =============================================================================
 // Init
