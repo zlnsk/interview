@@ -14,7 +14,7 @@
   --blue: #3b82f6;
   --purple: #a855f7;
   --orange: #f97316;
-  --radius: 8px;
+  --radius: var(--m3-shape-sm, 8px);
   --shadow: rgba(0,0,0,0.4);
   --modal-bg: rgba(0,0,0,0.7);
   color-scheme: dark;
@@ -81,9 +81,14 @@ body {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 0.4rem 1rem;
-  border-bottom: 1px solid var(--border);
-  background: var(--surface);
+  padding: 8px 16px;
+  border-bottom: 1px solid var(--m3-outline-variant, var(--border));
+  background: color-mix(in srgb, var(--m3-surface) 80%, transparent);
+  backdrop-filter: saturate(180%) blur(12px);
+  -webkit-backdrop-filter: saturate(180%) blur(12px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
   flex-shrink: 0;
 }
 
@@ -93,10 +98,10 @@ body {
   gap: 0.75rem;
 }
 
-.topbar-left h1 {
-  font-size: 0.95rem;
-  font-weight: 600;
-  letter-spacing: -0.02em;
+/* Let shared .m3-brand-title rule the brand title (uppercase + letter-spacing 0.25em).
+   Only cap the size in this compact topbar. */
+.topbar-left h1.m3-brand-title {
+  font-size: 1rem;
 }
 
 .topbar-right {
@@ -156,29 +161,30 @@ button, select {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  background: var(--danger);
-  color: #fff;
+  background: var(--m3-error, var(--danger));
+  color: var(--m3-on-error, #fff);
   border: none;
   padding: 0.4rem 0.8rem;
-  border-radius: var(--radius);
+  border-radius: var(--m3-shape-full);
   font-size: 0.8rem;
   font-weight: 600;
+  box-shadow: var(--m3-elev-1);
 }
 
 .btn-icon {
   background: none;
-  border: 1px solid var(--border2);
-  color: var(--text);
-  width: 32px;
-  height: 32px;
-  border-radius: var(--radius);
+  border: 1px solid var(--m3-outline-variant, var(--border2));
+  color: var(--m3-on-surface, var(--text));
+  width: 40px;
+  height: 40px;
+  border-radius: var(--m3-shape-full);
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: border-color 0.15s;
+  transition: border-color 0.15s, background 0.15s;
 }
 
-.btn-icon:hover { border-color: var(--text2); }
+.btn-icon:hover { border-color: var(--m3-outline, var(--text2)); background: var(--m3-surface-container-high, var(--surface2)); }
 
 .btn-ghost {
   background: none;
@@ -193,11 +199,11 @@ button, select {
 .btn-sm { padding: 0.4rem 0.8rem; font-size: 0.8rem; }
 
 select {
-  background: var(--surface2);
-  border: 1px solid var(--border2);
-  color: var(--text);
-  padding: 0.35rem 0.6rem;
-  border-radius: var(--radius);
+  background: var(--m3-surface-container-high, var(--surface2));
+  border: 1px solid var(--m3-outline-variant, var(--border2));
+  color: var(--m3-on-surface, var(--text));
+  padding: 0.4rem 0.7rem;
+  border-radius: var(--m3-shape-sm);
   font-size: 0.75rem;
 }
 
@@ -283,10 +289,10 @@ select {
 
 .utterance .speaker-tag .badge {
   font-size: 0.6rem;
-  padding: 0.05rem 0.3rem;
-  border-radius: 3px;
-  background: var(--surface2);
-  color: var(--text2);
+  padding: 2px 6px;
+  border-radius: var(--m3-shape-xs);
+  background: var(--m3-surface-container-high, var(--surface2));
+  color: var(--m3-on-surface-variant, var(--text2));
   font-weight: 500;
 }
 
@@ -317,11 +323,12 @@ select {
 
 /* AI Answer Cards — centered, clean */
 .answer-card {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: var(--radius);
-  padding: 0.8rem 1rem;
-  margin-bottom: 0.6rem;
+  background: var(--m3-surface-container-low, var(--surface));
+  border: 1px solid var(--m3-outline-variant, var(--border));
+  border-radius: var(--m3-shape-lg);
+  padding: 12px 16px;
+  margin-bottom: 8px;
+  box-shadow: var(--m3-elev-1);
   animation: fadeIn 0.2s ease;
 }
 
@@ -377,9 +384,9 @@ select {
 }
 
 .answer-card .answer-text code {
-  background: var(--surface2);
-  padding: 0.1rem 0.35rem;
-  border-radius: 3px;
+  background: var(--m3-surface-container-high, var(--surface2));
+  padding: 2px 6px;
+  border-radius: var(--m3-shape-xs);
   font-size: 0.82em;
 }
 
@@ -595,10 +602,11 @@ select {
 .modal.hidden { display: none; }
 
 .modal-content {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 12px;
-  padding: 2rem;
+  background: var(--m3-surface-container-high, var(--surface));
+  border: 1px solid var(--m3-outline-variant, var(--border));
+  border-radius: var(--m3-shape-xl);
+  box-shadow: var(--m3-elev-3);
+  padding: 32px;
   max-width: 420px;
   width: 90%;
   text-align: center;
@@ -638,13 +646,13 @@ select {
 /* PiP */
 .pip-container {
   position: fixed;
-  bottom: 1rem;
-  left: 1rem;
+  bottom: 16px;
+  left: 16px;
   z-index: 50;
-  border-radius: 10px;
+  border-radius: var(--m3-shape-md);
   overflow: hidden;
-  border: 2px solid var(--border2);
-  box-shadow: 0 4px 20px var(--shadow);
+  border: 1px solid var(--m3-outline-variant, var(--border2));
+  box-shadow: var(--m3-elev-3);
   width: 280px;
 }
 
@@ -683,11 +691,11 @@ select {
   flex-wrap: wrap;
 }
 .chip {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  color: var(--text2);
-  padding: 0.25rem 0.55rem;
-  border-radius: 14px;
+  background: var(--m3-surface-container-high, var(--surface2));
+  border: 1px solid var(--m3-outline-variant, var(--border));
+  color: var(--m3-on-surface-variant, var(--text2));
+  padding: 0.25rem 0.6rem;
+  border-radius: var(--m3-shape-sm);
   font-size: 0.7rem;
   font-weight: 500;
   cursor: pointer;
@@ -696,20 +704,20 @@ select {
 }
 .chip:hover { color: var(--text); border-color: var(--border2); }
 .chip.active {
-  background: var(--accent);
-  color: var(--bg);
-  border-color: var(--accent);
+  background: var(--m3-primary, var(--accent));
+  color: var(--m3-on-primary, var(--bg));
+  border-color: var(--m3-primary, var(--accent));
 }
 
 /* Top right usage pill */
 .header-actions { display: flex; gap: 0.5rem; align-items: center; }
 .usage-pill {
   font-size: 0.7rem;
-  color: var(--text2);
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  padding: 0.18rem 0.5rem;
-  border-radius: 12px;
+  color: var(--m3-on-surface-variant, var(--text2));
+  background: var(--m3-surface-container-high, var(--surface2));
+  border: 1px solid var(--m3-outline-variant, var(--border));
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--m3-shape-full);
   cursor: pointer;
 }
 .usage-pill:hover { color: var(--text); }
@@ -838,9 +846,9 @@ select {
 .cal-item details pre {
   white-space: pre-wrap;
   word-wrap: break-word;
-  background: var(--surface2);
-  padding: 0.4rem;
-  border-radius: 4px;
+  background: var(--m3-surface-container-high, var(--surface2));
+  padding: 8px;
+  border-radius: var(--m3-shape-xs);
   margin-top: 0.3rem;
   font-size: 0.7rem;
   max-height: 200px;
@@ -916,9 +924,9 @@ select {
 .prose-output p { margin: 0.3rem 0; }
 .prose-output ul, .prose-output ol { margin: 0.3rem 0; padding-left: 1.4rem; }
 .prose-output code {
-  background: var(--surface2);
-  padding: 0.1rem 0.35rem;
-  border-radius: 3px;
+  background: var(--m3-surface-container-high, var(--surface2));
+  padding: 2px 6px;
+  border-radius: var(--m3-shape-xs);
   font-size: 0.82em;
 }
 .prose-output pre {
@@ -939,14 +947,14 @@ select {
   color: var(--text2);
 }
 kbd {
-  background: var(--surface2);
-  border: 1px solid var(--border2);
-  border-radius: 4px;
-  padding: 0.05rem 0.35rem;
+  background: var(--m3-surface-container-high, var(--surface2));
+  border: 1px solid var(--m3-outline-variant, var(--border2));
+  border-radius: var(--m3-shape-xs);
+  padding: 2px 6px;
   font-family: ui-monospace, monospace;
   font-size: 0.72rem;
-  color: var(--text);
-  margin: 0 0.15rem;
+  color: var(--m3-on-surface, var(--text));
+  margin: 0 2px;
 }
 
 /* Answer card additions */
@@ -962,11 +970,11 @@ kbd {
   border-top: 1px solid var(--border);
 }
 .chip-mini {
-  background: var(--surface2);
-  border: 1px solid var(--border);
-  color: var(--text2);
-  padding: 0.18rem 0.5rem;
-  border-radius: 12px;
+  background: var(--m3-surface-container-high, var(--surface2));
+  border: 1px solid var(--m3-outline-variant, var(--border));
+  color: var(--m3-on-surface-variant, var(--text2));
+  padding: 0.2rem 0.5rem;
+  border-radius: var(--m3-shape-sm);
   font-size: 0.68rem;
   font-weight: 500;
   cursor: pointer;
@@ -982,9 +990,9 @@ kbd {
 .answer-card .meta-mode {
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  background: var(--surface2);
-  padding: 0.05rem 0.35rem;
-  border-radius: 3px;
+  background: var(--m3-surface-container-high, var(--surface2));
+  padding: 2px 6px;
+  border-radius: var(--m3-shape-xs);
   font-size: 0.6rem;
 }
 
@@ -1070,4 +1078,4 @@ body {
 /* ================== End M3 Visible Integration =================== */
 
 /* M3 canonical brand title — compact override for topbar */
-.topbar .m3-brand-title { margin: 0 !important; padding: 0 !important; font-size: 1rem !important; }
+#topbar .m3-brand-title { margin: 0 !important; padding: 0 !important; font-size: 1rem !important; }
