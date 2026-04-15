@@ -108,8 +108,6 @@ const PRICING = {
   'anthropic/claude-sonnet-4-6': { in: 3, cacheWrite: 3.75, cacheRead: 0.30, out: 15 },
   'anthropic/claude-opus-4-6':   { in: 15, cacheWrite: 18.75, cacheRead: 1.50, out: 75 },
   'anthropic/claude-haiku-4.5':  { in: 1, cacheWrite: 1.25, cacheRead: 0.10, out: 5 },
-  'google/gemini-2.5-flash':        { in: 0.30, cacheWrite: 0.30, cacheRead: 0.075, out: 2.50 },
-  'openai/gpt-4o-mini':          { in: 0.15, cacheWrite: 0.15, cacheRead: 0.075, out: 0.60 },
 };
 
 function priceFor(model) {
@@ -660,8 +658,7 @@ function buildSystemContent(modePrompt, docs, refinementInstr) {
 function modelId(model) {
   if (model === 'opus') return 'anthropic/claude-opus-4-6';
   if (model === 'haiku') return 'anthropic/claude-haiku-4.5';
-  if (model === 'flash') return 'google/gemini-2.5-flash';
-  return 'google/gemini-2.5-flash';
+  return 'anthropic/claude-sonnet-4-6';
 }
 
 // =============================================================================

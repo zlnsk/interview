@@ -9,3 +9,6 @@ uploads/*
 sessions/
 *.log
 .DS_Store
+
+# all backups
+*.bak*
