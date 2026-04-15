@@ -1068,3 +1068,6 @@ body {
   box-shadow: var(--m3-elev-1) !important;
 }
 /* ================== End M3 Visible Integration =================== */
+
+/* M3 canonical brand title — compact override for topbar */
+.topbar .m3-brand-title { margin: 0 !important; padding: 0 !important; font-size: 1rem !important; }
