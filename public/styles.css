@@ -1078,10 +1078,7 @@ body {
 /* ================== End M3 Visible Integration =================== */
 
 /* M3 canonical brand title — compact override for topbar */
-<<<<<<< HEAD
 #topbar .m3-brand-title { margin: 0 !important; padding: 0 !important; font-size: 1rem !important; }
-=======
-.topbar .m3-brand-title { margin: 0 !important; padding: 0 !important; font-size: 1rem !important; }
 
 /* ================== Consistency lock (2026-04-15) ==================
    Unify font sizes, pill/button heights across topbar + panel chrome.
@@ -1196,4 +1193,3 @@ body {
 }
 .drawer textarea { border-radius: 12px !important; }
 .drawer .btn-primary { font-weight: 600 !important; padding: 0.5rem 1rem !important; }
->>>>>>> a18a490 (interview: consistency lock for fonts, pills, and buttons)
