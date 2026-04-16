@@ -4,44 +4,46 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Interview Assistant</title>
-  <link rel="stylesheet" href="/Interview/styles.css?v=cockpit1">
   <link rel="stylesheet" href="/Interview/m3-tokens.css">
   <link rel="stylesheet" href="/Interview/m3-components.css">
   <link rel="stylesheet" href="/Interview/m3-overlay.css">
+  <link rel="stylesheet" href="/Interview/styles.css?v=cockpit2">
   <style>:root { --m3-source-hue: 300; }</style>
 </head>
 <body>
   <div id="app">
     <!-- Top Bar -->
     <header id="topbar">
-      <div class="topbar-left">
-        <h1 class="m3-brand-title">INTERVIEW</h1>
-        <div class="status-pill" id="statusPill">
-          <span class="dot"></span>
+      <div class="topbar-cluster topbar-left">
+        <h1 class="m3-brand-title topbar-brand">INTERVIEW</h1>
+        <div class="m3-chip status-chip" id="statusPill" role="status" aria-live="polite">
+          <span class="dot" aria-hidden="true"></span>
           <span class="label">Ready</span>
         </div>
         <!-- Mode chips (Phase 2) -->
         <div class="mode-chips" id="modeChips">
-          <button class="chip" data-mode="followup" title="Follow-ups (3)">Follow-ups</button>
+          <button class="m3-btn m3-btn-text mode-btn" data-mode="followup" title="Follow-ups (3)">Follow-ups</button>
         </div>
       </div>
-      <div class="topbar-right">
-        <select id="modelSelect" title="Model">
-          <option value="sonnet" selected>Sonnet 4.6</option>
-          <option value="opus">Opus 4.6</option>
-        </select>
-        <button id="btnPip" class="btn-icon" title="Pop out answers (P)" style="display:none">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><rect x="12" y="11" width="7" height="6" rx="1" fill="currentColor"/></svg>
+      <div class="topbar-cluster topbar-right">
+        <label class="model-select-wrap">
+          <select id="modelSelect" class="model-select" title="Model">
+            <option value="sonnet" selected>Sonnet 4.6</option>
+            <option value="opus">Opus 4.6</option>
+          </select>
+        </label>
+        <button id="btnPip" class="m3-icon-btn" title="Pop out answers (P)" aria-label="Pop out answers" style="display:none">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="5" width="18" height="14" rx="2"/><rect x="12" y="11" width="7" height="6" rx="1" fill="currentColor"/></svg>
         </button>
-        <button id="btnMenu" class="btn-icon" title="Menu (M)">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+        <button id="btnMenu" class="m3-icon-btn" title="Menu (M)" aria-label="Menu">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
         </button>
-        <button id="btnCapture" class="btn-primary">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
+        <button id="btnCapture" class="m3-btn m3-btn-filled">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="12" cy="12" r="10"/><circle cx="12" cy="12" r="3" fill="currentColor"/></svg>
           <span>Share Tab Audio</span>
         </button>
-        <button id="btnStop" class="btn-danger" style="display:none">
-          <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
+        <button id="btnStop" class="m3-btn m3-btn-filled m3-btn-error" style="display:none">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><rect x="6" y="6" width="12" height="12" rx="2"/></svg>
           <span>Stop</span>
         </button>
       </div>
@@ -50,10 +52,10 @@
     <!-- AI Answers — top center, near camera -->
     <div id="answerPanel">
       <div class="panel-header">
-        <h2>Assistant</h2>
+        <h2 class="m3-section-label">Assistant</h2>
         <div class="header-actions">
-          <span id="usagePill" class="usage-pill" title="Click for full usage dashboard">$0.00 today</span>
-          <button id="btnClearAnswers" class="btn-ghost" title="Clear answers (C)">Clear</button>
+          <button id="usagePill" class="m3-chip" title="Click for full usage dashboard" type="button">$0.00 today</button>
+          <button id="btnClearAnswers" class="m3-chip" title="Clear answers (C)" type="button">Clear</button>
         </div>
       </div>
       <div id="answers" class="scroll-area">
@@ -67,7 +69,7 @@
     <!-- Transcript — bottom -->
     <div id="transcriptPanel">
       <div class="panel-header">
-        <h2>Transcript</h2>
+        <h2 class="m3-section-label">Transcript</h2>
         <div class="speaker-legend" id="speakerLegend"></div>
       </div>
       <div id="transcript" class="scroll-area">
@@ -89,7 +91,7 @@
         <button class="tab" data-tab="usage">Usage</button>
         <button class="tab" data-tab="prep">Prep</button>
       </div>
-      <button id="btnCloseDrawer" class="btn-ghost">Close</button>
+      <button id="btnCloseDrawer" class="m3-btn m3-btn-outlined">Close</button>
     </div>
     <div class="drawer-body">
       <!-- Docs tab -->
@@ -104,7 +106,7 @@
             <input type="file" id="fileInput" accept=".pdf,.txt,.md">
             Choose file
           </label>
-          <button type="submit" class="btn-primary btn-sm">Upload</button>
+          <button type="submit" class="m3-btn m3-btn-filled">Upload</button>
         </form>
         <p class="hint-row">
           <label class="checkbox-row">
@@ -130,7 +132,7 @@
             <select id="personaDefaultMode">
               <option value="followup">Default mode: Follow-ups</option>
             </select>
-            <button type="submit" class="btn-primary btn-sm">Save</button>
+            <button type="submit" class="m3-btn m3-btn-filled">Save</button>
           </div>
         </form>
         <div id="personasList"></div>
@@ -151,7 +153,7 @@
             <option value="30">30 days</option>
             <option value="90">90 days</option>
           </select>
-          <button id="btnRefreshUsage" class="btn-ghost">Refresh</button>
+          <button id="btnRefreshUsage" class="m3-btn m3-btn-text">Refresh</button>
         </div>
         <div id="usageStats"></div>
       </section>
@@ -165,7 +167,7 @@
             <option value="sonnet">Sonnet</option>
             <option value="opus">Opus</option>
           </select>
-          <button id="btnRunPrep" class="btn-primary btn-sm">Generate prep brief</button>
+          <button id="btnRunPrep" class="m3-btn m3-btn-filled">Generate prep brief</button>
         </div>
         <div id="prepOutput" class="prose-output"></div>
       </section>
@@ -187,7 +189,7 @@
         <input type="checkbox" id="autoPickSpeaker">
         <span>Auto-pick the second speaker next time (interviewer = first)</span>
       </label>
-      <button id="btnSkipSpeaker" class="btn-ghost">Skip — I'll set it later</button>
+      <button id="btnSkipSpeaker" class="m3-btn m3-btn-text">Skip — I'll set it later</button>
     </div>
   </div>
 
@@ -196,7 +198,7 @@
     <div class="modal-content modal-wide">
       <div class="row" style="justify-content:space-between;align-items:center">
         <h3>Session Recap</h3>
-        <button id="btnCloseRecap" class="btn-ghost">Close</button>
+        <button id="btnCloseRecap" class="m3-btn m3-btn-text">Close</button>
       </div>
       <div id="recapOutput" class="prose-output"></div>
     </div>
@@ -207,7 +209,7 @@
     <div class="modal-content modal-wide">
       <div class="row" style="justify-content:space-between;align-items:center">
         <h3>Keyboard shortcuts</h3>
-        <button id="btnCloseHelp" class="btn-ghost">Close</button>
+        <button id="btnCloseHelp" class="m3-btn m3-btn-text">Close</button>
       </div>
       <div class="hotkey-grid">
         <div><kbd>Space</kbd> Answer the last detected question</div>

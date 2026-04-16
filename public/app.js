@@ -65,7 +65,10 @@ const helpModal = $('#helpModal');
 const autoPickSpeaker = $('#autoPickSpeaker');
 
 function setStatus(text, type = '') {
-  statusPill.className = 'status-pill ' + type;
+  // Keep shared M3 chip classes; only toggle semantic state classes.
+  statusPill.className = 'm3-chip status-chip' + (type ? ' ' + type : '');
+  if (type === 'active') statusPill.setAttribute('data-selected', 'true');
+  else statusPill.removeAttribute('data-selected');
   statusPill.querySelector('.label').textContent = text;
 }
 function scrollToBottom(el) { el.scrollTop = el.scrollHeight; }
@@ -529,13 +532,13 @@ function updateUsagePill() {
 // =============================================================================
 // Mode chips
 // =============================================================================
-$$('#modeChips .chip').forEach(chip => {
+$$('#modeChips .mode-btn').forEach(chip => {
   chip.addEventListener('click', () => setMode(chip.dataset.mode));
 });
 
 function setMode(mode) {
   state.mode = mode;
-  $$('#modeChips .chip').forEach(c => c.classList.toggle('active', c.dataset.mode === mode));
+  $$('#modeChips .mode-btn').forEach(c => c.classList.toggle('active', c.dataset.mode === mode));
 }
 
 // =============================================================================
@@ -1025,7 +1028,7 @@ document.addEventListener('keydown', (e) => {
   // Mode chips 1-6
   if (/^[1-6]$/.test(e.key)) {
     const idx = parseInt(e.key) - 1;
-    const chips = $$('#modeChips .chip');
+    const chips = $$('#modeChips .mode-btn');
     if (chips[idx]) { setMode(chips[idx].dataset.mode); e.preventDefault(); }
     return;
   }
