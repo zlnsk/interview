@@ -247,14 +247,26 @@ button.m3-btn-filled.m3-btn-error {
   #answerPanel { border-bottom: 1px solid var(--m3-outline-variant); }
 }
 
+/* Panel headers — LOCKED to identical 56px row on both sides so the
+   horizontal divider under TRANSCRIPT and ASSISTANT lands on the same
+   pixel. `height` (not min-height) + box-sizing:border-box + zero top/bottom
+   padding guarantees neither side can grow by 1px if a child pill is taller
+   than the other's. Applied to both #transcriptPanel .panel-header and
+   #answerPanel .panel-header via the same selector. */
+#transcriptPanel .panel-header,
+#answerPanel .panel-header,
 .panel-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--m3-space-3);
-  padding: var(--m3-space-3) var(--m3-space-5);
+  height: 56px;
   min-height: 56px;
+  max-height: 56px;
+  padding: 0 16px;
+  margin: 0;
   border-bottom: 1px solid var(--m3-outline-variant);
+  box-sizing: border-box;
   flex-shrink: 0;
 }
 
