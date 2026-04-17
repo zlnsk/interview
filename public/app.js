@@ -19,7 +19,7 @@ const state = {
   lastAnswerText: '',        // for clipboard copy + refinement
   lastAnswerCard: null,      // DOM ref to most recent answer card
   speakerModalShown: false,
-  mode: 'followup',
+  mode: 'answer',
   personas: [],
   selectedPersona: '',
   ragMode: false,

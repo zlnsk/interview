@@ -7,7 +7,7 @@
   <link rel="stylesheet" href="/Interview/m3-tokens.css">
   <link rel="stylesheet" href="/Interview/m3-components.css">
   <link rel="stylesheet" href="/Interview/m3-overlay.css">
-  <link rel="stylesheet" href="/Interview/styles.css?v=cockpit2">
+  <link rel="stylesheet" href="/Interview/styles.css?v=splitv1">
   <style>:root { --m3-source-hue: 300; }</style>
 </head>
 <body>
@@ -21,9 +21,7 @@
           <span class="label">Ready</span>
         </div>
         <!-- Mode chips (Phase 2) -->
-        <div class="mode-chips" id="modeChips">
-          <button class="m3-btn m3-btn-text mode-btn" data-mode="followup" title="Follow-ups (3)">Follow-ups</button>
-        </div>
+        <div class="mode-chips" id="modeChips"></div>
       </div>
       <div class="topbar-cluster topbar-right">
         <label class="model-select-wrap">
@@ -130,7 +128,7 @@
               <option value="opus">Opus</option>
             </select>
             <select id="personaDefaultMode">
-              <option value="followup">Default mode: Follow-ups</option>
+              <option value="answer">Default mode: Answer</option>
             </select>
             <button type="submit" class="m3-btn m3-btn-filled">Save</button>
           </div>
@@ -213,7 +211,6 @@
       </div>
       <div class="hotkey-grid">
         <div><kbd>Space</kbd> Answer the last detected question</div>
-        <div><kbd>1</kbd> Follow-ups</div>
         <div><kbd>R</kbd> Refine last answer: shorter</div>
         <div><kbd>Shift</kbd>+<kbd>R</kbd> Refine: longer</div>
         <div><kbd>E</kbd> Refine: add example</div>

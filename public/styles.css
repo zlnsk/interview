@@ -72,21 +72,29 @@ body {
 }
 #app > header#topbar { grid-column: 1 / -1; }
 
-@media (min-width: 980px) {
+/* Desktop (>= 900px): vertical split — answers on top (larger, ~68%),
+   transcript on bottom (smaller, ~32%). Single column, subtle 1px divider
+   between panels. Each panel scrolls independently. The candidate reads
+   answers more than questions, so answers get the bigger share. */
+@media (min-width: 900px) {
   #app {
-    grid-template-columns: minmax(320px, 1fr) minmax(420px, 1.3fr);
-    grid-template-rows: auto 1fr;
+    grid-template-columns: 1fr;
+    grid-template-rows: auto minmax(0, 1fr) minmax(160px, 32vh);
     grid-template-areas:
-      "topbar topbar"
-      "transcript answers";
+      "topbar"
+      "answers"
+      "transcript";
   }
-  #transcriptPanel { grid-area: transcript; }
-  #answerPanel     { grid-area: answers; }
   #app > header#topbar { grid-area: topbar; }
+  #answerPanel     { grid-area: answers; }
+  #transcriptPanel { grid-area: transcript; }
 }
 
-@media (max-width: 979px) {
+/* Small screens (< 900px): keep stacked layout — desktop tool, but don't
+   break on narrow viewports. Answers still on top, transcript below. */
+@media (max-width: 899px) {
   #app {
+    grid-template-columns: 1fr;
     grid-template-rows: auto minmax(280px, 2fr) minmax(160px, 1fr);
     grid-template-areas:
       "topbar"
@@ -239,13 +247,10 @@ button.m3-btn-filled.m3-btn-error {
   background: transparent;
 }
 
-@media (min-width: 980px) {
-  #answerPanel { border-inline-start: 1px solid var(--m3-outline-variant); }
-}
-
-@media (max-width: 979px) {
-  #answerPanel { border-bottom: 1px solid var(--m3-outline-variant); }
-}
+/* Divider between answers (top) and transcript (bottom). Single 1px line,
+   subtle — sits on the transcript panel's top edge so it's always shown,
+   at every viewport width. */
+#transcriptPanel { border-top: 1px solid var(--m3-outline-variant); }
 
 /* Panel headers — LOCKED to identical 56px row on both sides so the
    horizontal divider under TRANSCRIPT and ASSISTANT lands on the same

@@ -202,7 +202,7 @@ const MODE_PROMPTS = {
 
 ${BASE_RULES}
 
-CRITICAL: NEVER ask questions back to the user. You are generating what the user should SAY to the interviewer — only provide answers.
+CRITICAL: The user is the CANDIDATE being interviewed. They answer the interviewer; they do NOT ask follow-up questions back during the interview. NEVER suggest follow-up questions, clarifying questions, or any "questions to ask back". NEVER append a "Follow-up Questions You Can Ask" section, "Questions to ask the interviewer" section, or any similar trailing list. Output ONLY the direct answer the candidate should SAY.
 
 If the interviewer's question is ambiguous and has two plausible interpretations, present BOTH answers as two clearly-labelled branches:
 **Option A — <short label>:** ...answer...
@@ -210,16 +210,6 @@ If the interviewer's question is ambiguous and has two plausible interpretations
 Keep each branch tight. The user will pick the one that fits.
 
 Length: MAX 90 words per branch (180 total when ambiguous), 130 for behavioral questions.`,
-
-
-  followup: `You are a live interview assistant. After the interviewer's question, suggest 2-3 smart follow-up questions THE USER can ask back to show curiosity, depth, and engagement.
-
-${BASE_RULES}
-
-Output: numbered list of 2-3 short questions, max 15 words each. No preamble.`,
-
-
-
 };
 
 const REFINEMENT_INSTRUCTIONS = {
@@ -922,8 +912,8 @@ Bulleted, brief paraphrase of each question.
 Pick 2-3 that landed well. One sentence each, why they worked.
 ## Answers to revise
 Pick 2-3 that were weak or off. One sentence each, what to change.
-## Likely follow-ups they'll ask in the next round
-Numbered list of 5.
+## Likely next-round questions from the interviewer
+Numbered list of 5 questions the interviewer might ask in a follow-up round, so the candidate can prepare.
 ## Thank-you note draft
 3 short paragraphs, professional, references one specific moment from the conversation.`,
   }];
