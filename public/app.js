@@ -433,7 +433,7 @@ async function generateAnswer(question, opts = {}) {
     <div class="meta">
       <span class="meta-mode">${mode}</span>
       <span class="meta-model">${model === 'opus' ? 'Opus 4.6' : 'Sonnet 4.6'}</span>
-      <span class="meta-time">${new Date().toLocaleTimeString()}</span>
+      <span class="meta-time">${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
       <span class="meta-cost"></span>
     </div>
   `;
@@ -774,7 +774,7 @@ async function loadSessions() {
   sessionsList.innerHTML = data.sessions.map(s => `
     <div class="session-item">
       <div>
-        <div><strong>${new Date(s.startedAt).toLocaleString()}</strong></div>
+        <div><strong>${new Date(s.startedAt).toLocaleString('en-GB', { hour12: false })}</strong></div>
         <div class="hint-text">${s.questionCount} question${s.questionCount === 1 ? '' : 's'}</div>
       </div>
       <button class="btn-primary btn-sm" data-recap="${escapeHtml(s.sessionId)}">Recap</button>
