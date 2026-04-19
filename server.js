@@ -41,6 +41,22 @@ function userKey(user) {
   return (user || 'anonymous').toLowerCase().replace(/[^a-z0-9._@-]/g, '_');
 }
 
+// Atomic write: write to tmp then rename so readers never see a half-written
+// file. Crash-safe and concurrent-writer-safe on the same filesystem.
+function atomicWriteSync(filePath, content) {
+  const tmp = filePath + '.tmp-' + process.pid + '-' + Date.now();
+  fs.writeFileSync(tmp, content);
+  fs.renameSync(tmp, filePath);
+}
+
+function setSseHeaders(res) {
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache, no-transform');
+  res.setHeader('Connection', 'keep-alive');
+  // Disable buffering in nginx / similar proxies so tokens stream live.
+  res.setHeader('X-Accel-Buffering', 'no');
+}
+
 // =============================================================================
 // PER-USER RATE LIMITER (sliding window, in-memory)
 // =============================================================================
@@ -129,13 +145,15 @@ function calcCost(model, usage) {
 const USAGE_FILE = path.join(DATA_DIR, 'usage.jsonl');
 
 function logUsage(user, entry) {
-  try {
-    fs.appendFileSync(USAGE_FILE, JSON.stringify({
-      ts: new Date().toISOString(),
-      user: userKey(user),
-      ...entry,
-    }) + '\n');
-  } catch (e) { console.error('[usage] log error:', e.message); }
+  const line = JSON.stringify({
+    ts: new Date().toISOString(),
+    user: userKey(user),
+    ...entry,
+  }) + '\n';
+  // Async so we never block the request path on disk I/O.
+  fs.appendFile(USAGE_FILE, line, (e) => {
+    if (e) console.error('[usage] log error:', e.message);
+  });
 }
 
 function readUsageStats(user, days = 7) {
@@ -210,6 +228,42 @@ If the interviewer's question is ambiguous and has two plausible interpretations
 Keep each branch tight. The user will pick the one that fits.
 
 Length: MAX 90 words per branch (180 total when ambiguous), 130 for behavioral questions.`,
+
+  clarify: `You are a live interview assistant. The candidate wants to buy a few seconds to think AND narrow the question. Generate ONE short, natural clarifying question the candidate can ask the interviewer back — it should either confirm an assumption, narrow scope, or surface the key constraint.
+
+Output ONLY the clarifying question, one sentence, first person, no preamble, no alternatives.`,
+
+  followups: `You are a live interview assistant. The candidate just finished answering. Suggest 2-3 thoughtful follow-up questions the CANDIDATE could ask the INTERVIEWER back to show curiosity and seniority — tied to the specific topic of the interviewer's question.
+
+Format: numbered list, one line each, no preamble, no trailing commentary. Avoid generic Glassdoor-style questions.`,
+
+  star: `You are a live interview assistant for a behavioural interview. Answer using the STAR framework, drawing concrete details and numbers from the uploaded CV.
+
+${BASE_RULES}
+
+Format EXACTLY:
+**Situation:** 1-2 lines of context.
+**Task:** 1 line on what you were asked to do.
+**Action:** 3-5 short bullets of what *you* did, with specifics.
+**Result:** 1-2 lines with quantified outcomes.
+
+First person throughout. Total under 200 words.`,
+
+  code: `You are a live interview assistant for a live coding interview. Output EXACTLY these four labelled blocks, in order, nothing else:
+
+**[SAY THIS FIRST]** 1-2 sentences restating the problem and the approach you're going to take, with the reason (e.g. "hash map for O(n) lookup").
+
+**[THE CODE]** Complete, correct, runnable solution inside a fenced code block. Pick the language from context, default to Python. Short, idiomatic; no redundant comments.
+
+**[SAY THIS AFTER]** 2-3 bullets walking through one concrete example input → output so the interviewer sees you traced through it.
+
+**[COMPLEXITY]** One line: Time O(...), Space O(...), with one short justification.
+
+${BASE_RULES}`,
+
+  bridge: `You are a live interview assistant. The candidate has gone silent and needs ONE short, natural stalling sentence they can say right now to buy 10-15 seconds of thinking time — tied to the specific question.
+
+Output ONE sentence only. First person. No preamble, no alternatives. Must sound human, not scripted.`,
 };
 
 const REFINEMENT_INSTRUCTIONS = {
@@ -248,7 +302,7 @@ function loadPersonas() {
 }
 
 function savePersonas(personas) {
-  fs.writeFileSync(PERSONAS_FILE, JSON.stringify(personas, null, 2));
+  atomicWriteSync(PERSONAS_FILE, JSON.stringify(personas, null, 2));
 }
 
 function userPersonas(user) {
@@ -274,7 +328,7 @@ function loadSpeakerPrefs() {
 }
 
 function saveSpeakerPrefs(prefs) {
-  fs.writeFileSync(SPEAKER_PREFS_FILE, JSON.stringify(prefs, null, 2));
+  atomicWriteSync(SPEAKER_PREFS_FILE, JSON.stringify(prefs, null, 2));
 }
 
 // =============================================================================
@@ -350,7 +404,18 @@ loadExistingDocs();
 
 function saveMeta() {
   const metaPath = path.join(UPLOADS_DIR, 'meta.json');
-  fs.writeFileSync(metaPath, JSON.stringify([...documents.values()], null, 2));
+  atomicWriteSync(metaPath, JSON.stringify([...documents.values()], null, 2));
+}
+
+// Docs visible to a user: strictly their own. Legacy docs (pre-scoping) have
+// no `user` field and are treated as shared — they remain visible but are not
+// deletable via the API until re-uploaded.
+function userVisibleDocs(user) {
+  const key = userKey(user);
+  return [...documents.values()].filter(d => !d.user || d.user === key);
+}
+function userOwnsDoc(user, doc) {
+  return !!doc && doc.user === userKey(user);
 }
 
 const upload = multer({
@@ -380,6 +445,7 @@ app.post(`${BASE_PATH}/api/upload`, upload.single('file'), async (req, res) => {
   }
   const doc = {
     id: req.file.filename,
+    user: userKey(req.authUser),
     name: req.file.originalname,
     type: req.body.type || 'other',
     text: text,
@@ -393,7 +459,7 @@ app.post(`${BASE_PATH}/api/upload`, upload.single('file'), async (req, res) => {
 });
 
 app.get(`${BASE_PATH}/api/documents`, (req, res) => {
-  const docs = [...documents.values()].map(d => ({
+  const docs = userVisibleDocs(req.authUser).map(d => ({
     id: d.id, name: d.name, type: d.type, uploadedAt: d.uploadedAt,
     chars: d.chars || (d.text || '').length,
     chunks: d.chunks ? d.chunks.length : 0,
@@ -404,6 +470,7 @@ app.get(`${BASE_PATH}/api/documents`, (req, res) => {
 app.delete(`${BASE_PATH}/api/documents/:id`, (req, res) => {
   const doc = documents.get(req.params.id);
   if (!doc) return res.status(404).json({ error: 'Not found' });
+  if (!userOwnsDoc(req.authUser, doc)) return res.status(403).json({ error: 'Forbidden' });
   const filePath = path.join(UPLOADS_DIR, doc.id);
   if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
   documents.delete(doc.id);
@@ -418,6 +485,15 @@ const SESSIONS_DIR = path.join(DATA_DIR, 'sessions');
 if (!fs.existsSync(SESSIONS_DIR)) fs.mkdirSync(SESSIONS_DIR, { recursive: true });
 const SESSION_GAP_MS = 30 * 60 * 1000;
 const activeSessions = new Map(); // user -> { id, lastQuestionAt, file }
+
+// Evict stale entries so the Map can't grow unbounded with unique users.
+// A stale entry will be recreated on the next event anyway.
+setInterval(() => {
+  const cutoff = Date.now() - 2 * SESSION_GAP_MS;
+  for (const [k, s] of activeSessions) {
+    if (s.lastQuestionAt < cutoff) activeSessions.delete(k);
+  }
+}, SESSION_GAP_MS).unref();
 
 function getOrCreateSession(user) {
   const key = userKey(user);
@@ -446,10 +522,13 @@ function getOrCreateSession(user) {
 function logSessionEvent(user, evt) {
   try {
     const s = getOrCreateSession(user);
-    fs.appendFileSync(s.file, JSON.stringify({
+    const line = JSON.stringify({
       timestamp: new Date().toISOString(),
       ...evt,
-    }) + '\n');
+    }) + '\n';
+    fs.appendFile(s.file, line, (err) => {
+      if (err) console.error('[interview-sessions] log error:', err.message);
+    });
     if (evt.type === 'question') s.count++;
   } catch (err) {
     console.error('[interview-sessions] log error:', err.message);
@@ -662,11 +741,15 @@ app.post(`${BASE_PATH}/api/answer`, rateLimitMiddleware('answer'), async (req, r
   if (!question) return res.status(400).json({ error: 'No question' });
   if (!OPENROUTER_API_KEY) return res.status(500).json({ error: 'No API key configured' });
 
-  // Filter documents
-  let docs = [...documents.values()];
+  // Filter to the user's own docs (security: no cross-user data injection).
+  let docs = userVisibleDocs(req.authUser);
   if (Array.isArray(enabledDocIds) && enabledDocIds.length > 0) {
-    docs = docs.filter(d => enabledDocIds.includes(d.id));
+    const allow = new Set(enabledDocIds);
+    docs = docs.filter(d => allow.has(d.id));
   }
+  // Stable order so the cacheable doc block stays byte-identical across
+  // requests even when Map insertion order changes (prompt caching).
+  docs.sort((a, b) => a.id.localeCompare(b.id));
 
   // RAG mode: only inject top-K chunks (cheaper for huge KBs)
   let ragChunks = null;
@@ -704,9 +787,7 @@ app.post(`${BASE_PATH}/api/answer`, rateLimitMiddleware('answer'), async (req, r
   }
 
   const selectedModel = modelId(model);
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
+  setSseHeaders(res);
 
   const abortController = new AbortController();
   let streaming = true;
@@ -814,10 +895,12 @@ app.post(`${BASE_PATH}/api/prep`, rateLimitMiddleware('prep'), async (req, res) 
   const { enabledDocIds, model, jobDescription } = req.body || {};
   if (!OPENROUTER_API_KEY) return res.status(500).json({ error: 'No API key' });
 
-  let docs = [...documents.values()];
+  let docs = userVisibleDocs(req.authUser);
   if (Array.isArray(enabledDocIds) && enabledDocIds.length > 0) {
-    docs = docs.filter(d => enabledDocIds.includes(d.id));
+    const allow = new Set(enabledDocIds);
+    docs = docs.filter(d => allow.has(d.id));
   }
+  docs.sort((a, b) => a.id.localeCompare(b.id));
   // If a JD was pasted in the request, treat it as an extra inline doc
   if (jobDescription && jobDescription.length > 50) {
     docs.push({ id: 'inline_jd', name: 'Pasted Job Description', type: 'job_description', text: jobDescription, chunks: chunkText(jobDescription) });
@@ -845,9 +928,7 @@ Be specific to the actual CV content. No generic advice.`,
     null
   );
 
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
+  setSseHeaders(res);
   const abortController = new AbortController();
   res.on('close', () => abortController.abort());
   const t0 = Date.now();
@@ -918,9 +999,7 @@ Numbered list of 5 questions the interviewer might ask in a follow-up round, so 
 3 short paragraphs, professional, references one specific moment from the conversation.`,
   }];
 
-  res.setHeader('Content-Type', 'text/event-stream');
-  res.setHeader('Cache-Control', 'no-cache');
-  res.setHeader('Connection', 'keep-alive');
+  setSseHeaders(res);
   const abortController = new AbortController();
   res.on('close', () => abortController.abort());
   const t0 = Date.now();
@@ -1056,13 +1135,17 @@ wss.on('connection', (clientWs) => {
   let deepgramWs = null;
   let keepAliveInterval = null;
 
-  clientWs.on('message', (msg) => {
-    if (typeof msg === 'string' || (msg instanceof Buffer && msg[0] === 0x7b)) {
+  // `isBinary` is the authoritative control/audio signal. The previous
+  // `msg[0] === 0x7b` heuristic misclassified any audio sample that happened
+  // to start with byte 0x7b ("{") as a control message and dropped the frame.
+  clientWs.on('message', (msg, isBinary) => {
+    if (!isBinary) {
       try {
         const ctrl = JSON.parse(msg.toString());
         if (ctrl.type === 'start') { startDeepgram(ctrl); return; }
         if (ctrl.type === 'stop') { stopDeepgram(); return; }
       } catch (e) {}
+      return;
     }
     if (deepgramWs && deepgramWs.readyState === WebSocket.OPEN) {
       deepgramWs.send(msg);
@@ -1113,7 +1196,9 @@ wss.on('connection', (clientWs) => {
     });
     deepgramWs.on('error', (err) => {
       console.error('Deepgram error:', err.message);
-      clientWs.send(JSON.stringify({ type: 'error', error: err.message }));
+      try { clientWs.send(JSON.stringify({ type: 'error', error: err.message })); } catch {}
+      // Clean up the keep-alive timer and socket ref so we don't leak either.
+      stopDeepgram();
     });
   }
 

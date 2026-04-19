@@ -21,11 +21,19 @@
           <span class="label">Ready</span>
         </div>
         <!-- Mode chips (Phase 2) -->
-        <div class="mode-chips" id="modeChips"></div>
+        <div class="mode-chips" id="modeChips">
+          <button type="button" class="m3-btn m3-btn-text mode-btn active" data-mode="answer" title="Answer (1)">Answer</button>
+          <button type="button" class="m3-btn m3-btn-text mode-btn" data-mode="clarify" title="Clarify (2)">Clarify</button>
+          <button type="button" class="m3-btn m3-btn-text mode-btn" data-mode="followups" title="Follow-ups (3)">Follow-ups</button>
+          <button type="button" class="m3-btn m3-btn-text mode-btn" data-mode="star" title="STAR (4)">STAR</button>
+          <button type="button" class="m3-btn m3-btn-text mode-btn" data-mode="code" title="Code (5)">Code</button>
+          <button type="button" class="m3-btn m3-btn-text mode-btn" data-mode="bridge" title="Bridge (6)">Bridge</button>
+        </div>
       </div>
       <div class="topbar-cluster topbar-right">
         <label class="model-select-wrap">
           <select id="modelSelect" class="model-select" title="Model">
+            <option value="haiku">Haiku 4.5</option>
             <option value="sonnet" selected>Sonnet 4.6</option>
             <option value="opus">Opus 4.6</option>
           </select>

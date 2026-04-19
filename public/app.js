@@ -432,7 +432,7 @@ async function generateAnswer(question, opts = {}) {
     </div>
     <div class="meta">
       <span class="meta-mode">${mode}</span>
-      <span class="meta-model">${model === 'opus' ? 'Opus 4.6' : 'Sonnet 4.6'}</span>
+      <span class="meta-model">${model === 'opus' ? 'Opus 4.6' : model === 'haiku' ? 'Haiku 4.5' : 'Sonnet 4.6'}</span>
       <span class="meta-time">${new Date().toLocaleTimeString('en-GB', { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
       <span class="meta-cost"></span>
     </div>
@@ -444,6 +444,21 @@ async function generateAnswer(question, opts = {}) {
 
   const textEl = card.querySelector('.answer-text');
   const costEl = card.querySelector('.meta-cost');
+
+  // Coalesce markdown re-renders into one per animation frame so streaming a
+  // 400-token answer doesn't trigger 400 marked.parse() + innerHTML thrashes.
+  let fullText = '';
+  let renderPending = false;
+  const flushRender = () => {
+    renderPending = false;
+    textEl.innerHTML = renderMarkdown(fullText) + '<span class="cursor"></span>';
+    if (state.pipWindow) renderPip();
+  };
+  const scheduleRender = () => {
+    if (renderPending) return;
+    renderPending = true;
+    requestAnimationFrame(flushRender);
+  };
 
   // Wire toolbar buttons (refinement)
   card.querySelectorAll('[data-ref]').forEach(btn => {
@@ -471,7 +486,6 @@ async function generateAnswer(question, opts = {}) {
     });
     const reader = res.body.getReader();
     const decoder = new TextDecoder();
-    let fullText = '';
     let buf = '';
     while (true) {
       const { done, value } = await reader.read();
@@ -489,8 +503,7 @@ async function generateAnswer(question, opts = {}) {
             const parsed = JSON.parse(data);
             if (parsed.text) {
               fullText += parsed.text;
-              textEl.innerHTML = renderMarkdown(fullText) + '<span class="cursor"></span>';
-              if (state.pipWindow) renderPip();
+              scheduleRender();
             }
             if (parsed.usage) {
               const c = parsed.usage.cost || 0;
