@@ -93,6 +93,7 @@
       <div class="drawer-tabs">
         <button class="tab active" data-tab="docs">Docs</button>
         <button class="tab" data-tab="personas">Personas</button>
+        <button class="tab" data-tab="vocab">Vocab</button>
         <button class="tab" data-tab="sessions">Sessions</button>
         <button class="tab" data-tab="usage">Usage</button>
         <button class="tab" data-tab="prep">Prep</button>
@@ -142,6 +143,21 @@
           </div>
         </form>
         <div id="personasList"></div>
+      </section>
+
+      <!-- Vocab tab — Deepgram keyterm prompting -->
+      <section class="tab-pane" data-pane="vocab">
+        <p class="hint-text">
+          Words and phrases Deepgram should prefer in transcription.
+          One per line. Max 50 terms × 100 chars each. Ideal for company
+          names, tech stack, candidate names, product names — anything the
+          base model would otherwise mis-spell. Applies on next capture start.
+        </p>
+        <textarea id="vocabTerms" placeholder="Kubernetes&#10;Anthropic&#10;Sonnet 4.6&#10;FastAPI&#10;Łukasz Zalewski" rows="10" style="width:100%;font-family:ui-monospace,monospace;font-size:0.9rem"></textarea>
+        <div class="row" style="margin-top:0.5rem;align-items:center">
+          <span id="vocabCount" class="hint-text" style="flex:1">0 terms</span>
+          <button id="btnSaveVocab" class="m3-btn m3-btn-filled">Save</button>
+        </div>
       </section>
 
       <!-- Sessions tab -->

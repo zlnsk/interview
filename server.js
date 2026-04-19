@@ -575,7 +575,7 @@ function listUserSessions(user) {
 
 function readSession(user, sessionId) {
   const key = userKey(user);
-  if (!/^[\w.-]+$/.test(sessionId)) return null;
+  if (!/^[\w-]{1,64}$/.test(sessionId)) return null;
   const filePath = path.join(SESSIONS_DIR, key, sessionId + '.jsonl');
   if (!fs.existsSync(filePath)) return null;
   const lines = fs.readFileSync(filePath, 'utf8').trim().split('\n').filter(Boolean);
@@ -1170,6 +1170,22 @@ wss.on('connection', (clientWs) => {
       filler_words: 'true',
       multichannel: 'false'
     });
+    // Deepgram Nova-3 keyterm prompting: one term per repeated param, capped
+    // at 50 × 100 chars (service limit). Boosts recognition of session-specific
+    // proper nouns — company names, candidate names, tech stack, interviewer
+    // jargon — that the base model would otherwise spell phonetically.
+    const terms = Array.isArray(config.keyterms) ? config.keyterms : [];
+    const seen = new Set();
+    let kept = 0;
+    for (const raw of terms) {
+      if (kept >= 50) break;
+      const t = String(raw || '').replace(/[\r\n]+/g, ' ').trim().slice(0, 100);
+      if (!t || seen.has(t.toLowerCase())) continue;
+      seen.add(t.toLowerCase());
+      params.append('keyterm', t);
+      kept++;
+    }
+    if (kept > 0) console.log(`[deepgram] keyterms=${kept}`);
     const url = `wss://api.deepgram.com/v1/listen?${params}`;
     deepgramWs = new WebSocket(url, {
       headers: { 'Authorization': `Token ${DEEPGRAM_API_KEY}` }

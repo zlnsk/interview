@@ -5,6 +5,7 @@ const state = {
   ws: null,
   mediaStream: null,
   audioContext: null,
+  audioSource: null,
   processor: null,
   isCapturing: false,
   mySpeaker: null,
@@ -86,6 +87,11 @@ btnCapture.addEventListener('click', startCapture);
 btnStop.addEventListener('click', stopCapture);
 
 async function startCapture() {
+  // Re-entry guard — a double-click (or re-click while the tab picker is
+  // still open) would otherwise start a second getDisplayMedia in parallel
+  // and throw InvalidStateError from the second call.
+  if (state.isStartingCapture || state.isCapturing) return;
+  state.isStartingCapture = true;
   try {
     state.mediaStream = await navigator.mediaDevices.getDisplayMedia({
       video: true,
@@ -129,6 +135,9 @@ async function startCapture() {
     };
     source.connect(state.processor);
     state.processor.connect(state.audioContext.destination);
+    // Stash the source so reconnect logic can re-wire if the processor ever
+    // gets disconnected (Chrome auto-suspends AudioContext on background tabs).
+    state.audioSource = source;
     connectWS();
     state.isCapturing = true;
     btnCapture.style.display = 'none';
@@ -137,10 +146,16 @@ async function startCapture() {
     transcriptEl.innerHTML = '';
     audioTracks[0].onended = () => stopCapture();
   } catch (err) {
-    if (err.name !== 'NotAllowedError') {
+    // NotAllowedError = user cancelled the tab picker. InvalidStateError +
+    // AbortError = user-cancel paths too (e.g. picker closed while a prior
+    // request was still pending). Swallow all three quietly.
+    const quiet = err && (err.name === 'NotAllowedError' || err.name === 'InvalidStateError' || err.name === 'AbortError');
+    if (!quiet) {
       console.error('Capture error:', err);
       alert('Failed to capture audio: ' + err.message);
     }
+  } finally {
+    state.isStartingCapture = false;
   }
 }
 
@@ -153,6 +168,7 @@ function stopCapture() {
   pipVideo.srcObject = null;
   document.getElementById('pipContainer').classList.add('hidden');
   if (state.mediaStream) { state.mediaStream.getTracks().forEach(t => t.stop()); state.mediaStream = null; }
+  if (state.audioSource) { try { state.audioSource.disconnect(); } catch {} state.audioSource = null; }
   if (state.processor) { state.processor.disconnect(); state.processor = null; }
   if (state.audioContext) { state.audioContext.close(); state.audioContext = null; }
   if (state.ws) {
@@ -168,10 +184,37 @@ function stopCapture() {
 // =============================================================================
 // WebSocket / Deepgram (existing)
 // =============================================================================
+function getKeyterms() {
+  try {
+    return (localStorage.getItem('interview.vocab') || '')
+      .split(/\r?\n/).map(s => s.trim()).filter(Boolean).slice(0, 50);
+  } catch { return []; }
+}
+
 function connectWS() {
   const proto = location.protocol === 'https:' ? 'wss:' : 'ws:';
   state.ws = new WebSocket(`${proto}//${location.host}/Interview/ws`);
-  state.ws.onopen = () => state.ws.send(JSON.stringify({ type: 'start', sampleRate: 16000 }));
+  state.ws.onopen = () => {
+    state.ws.send(JSON.stringify({ type: 'start', sampleRate: 16000, keyterms: getKeyterms() }));
+    // Audio pipeline recovery: browsers (esp. Chrome) auto-suspend AudioContext
+    // on background tabs; when the WS reconnects after a drop, the context may
+    // still be suspended — resume it and re-wire the graph so audio actually
+    // flows to the new Deepgram session. Before this, reconnect would "succeed"
+    // but the transcript stayed silent until the user clicked Stop + Capture.
+    if (state.audioContext && state.audioContext.state === 'suspended') {
+      state.audioContext.resume().catch(() => {});
+    }
+    if (state.audioSource && state.processor && state.audioContext) {
+      try {
+        state.audioSource.disconnect();
+        state.processor.disconnect();
+      } catch {}
+      try {
+        state.audioSource.connect(state.processor);
+        state.processor.connect(state.audioContext.destination);
+      } catch (e) { console.warn('[audio] re-wire failed:', e); }
+    }
+  };
   state.ws.onmessage = (evt) => handleDeepgramMessage(JSON.parse(evt.data));
   state.ws.onclose = () => {
     if (state.isCapturing) {
@@ -976,6 +1019,31 @@ function refreshActiveTab() {
   else if (active === 'personas') loadPersonas();
   else if (active === 'sessions') loadSessions();
   else if (active === 'usage') loadUsage();
+  else if (active === 'vocab') loadVocab();
+}
+
+// =============================================================================
+// Vocab tab — Deepgram keyterm list persisted in localStorage
+// =============================================================================
+function loadVocab() {
+  const ta = $('#vocabTerms');
+  const count = $('#vocabCount');
+  if (!ta) return;
+  ta.value = localStorage.getItem('interview.vocab') || '';
+  const updateCount = () => {
+    const n = ta.value.split(/\r?\n/).filter(s => s.trim().length > 0).length;
+    if (count) count.textContent = `${n} term${n === 1 ? '' : 's'}` + (n > 50 ? ' (first 50 will be sent)' : '');
+  };
+  updateCount();
+  if (!ta.dataset.bound) {
+    ta.addEventListener('input', updateCount);
+    $('#btnSaveVocab')?.addEventListener('click', () => {
+      localStorage.setItem('interview.vocab', ta.value);
+      setStatus('Vocab saved', 'active');
+      setTimeout(() => state.isCapturing || setStatus('', ''), 1500);
+    });
+    ta.dataset.bound = '1';
+  }
 }
 
 // =============================================================================
